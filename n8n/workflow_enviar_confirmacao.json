@@ -1,0 +1,276 @@
+{
+  "name": "WA — Enviar Confirmação de Escala",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enviar-confirmacao",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-entrada",
+      "name": "Webhook — Recebe escala_id",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "enviar-confirmacao"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "check-escala-id",
+              "leftValue": "={{ $json.body.escala_id }}",
+              "rightValue": "",
+              "operator": { "type": "number", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validar-entrada",
+      "name": "Validar — escala_id presente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ erro: 'escala_id é obrigatório', code: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "erro-sem-id",
+      "name": "Resposta — Erro 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 480]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT e.id AS escala_id, e.data_escala, e.horario, e.funcao, e.status AS status_escala,\n       mem.id AS membro_id, mem.nome AS membro_nome, mem.telefone,\n       min.nome AS ministerio\nFROM escalas e\nLEFT JOIN membros     mem ON mem.id = e.membro_id\nLEFT JOIN ministerios min ON min.id = e.ministerio_id\nWHERE e.id = {{ $('Webhook — Recebe escala_id').item.json.body.escala_id }}",
+        "options": {}
+      },
+      "id": "buscar-escala",
+      "name": "MySQL — Buscar Escala",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-escala-existe",
+              "leftValue": "={{ $json.escala_id }}",
+              "rightValue": "",
+              "operator": { "type": "number", "operation": "exists" }
+            },
+            {
+              "id": "check-telefone",
+              "leftValue": "={{ $json.telefone }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validar-escala",
+      "name": "Validar — Escala e telefone existem",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ erro: 'Escala não encontrada ou membro sem telefone', code: 422 }) }}",
+        "options": { "responseCode": 422 }
+      },
+      "id": "erro-escala",
+      "name": "Resposta — Erro 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formata telefone para E.164 (+55DDNÚMERO)\nfunction formatarTelefone(tel) {\n  const digitos = tel.replace(/\\D/g, '');\n  if (digitos.length === 13 && digitos.startsWith('55')) return '+' + digitos;\n  if (digitos.length === 11) return '+55' + digitos;\n  if (digitos.length === 10) return '+55' + digitos;\n  return null;\n}\n\n// Formata data BR\nfunction formatarData(dataStr) {\n  const d = new Date(dataStr + 'T00:00:00');\n  return d.toLocaleDateString('pt-BR');\n}\n\nconst item = $input.first().json;\nconst telefoneFormatado = formatarTelefone(item.telefone || '');\n\nif (!telefoneFormatado) {\n  throw new Error('Telefone inválido: ' + item.telefone);\n}\n\n// Token único para rastreamento\nconst token = require('crypto').randomBytes(32).toString('hex');\n\nreturn [{\n  json: {\n    escala_id:       item.escala_id,\n    membro_id:       item.membro_id,\n    membro_nome:     item.membro_nome,\n    ministerio:      item.ministerio || 'ministério',\n    data_formatada:  formatarData(item.data_escala),\n    horario:         (item.horario || '').substring(0, 5),\n    funcao:          item.funcao || 'voluntário(a)',\n    telefone:        telefoneFormatado,\n    token:           token,\n    // Parâmetros do template na ordem correta\n    param1:          item.membro_nome,\n    param2:          item.ministerio || 'ministério',\n    param3:          formatarData(item.data_escala),\n    param4:          (item.horario || '').substring(0, 5),\n    param5:          item.funcao || 'voluntário(a)'\n  }\n}];"
+      },
+      "id": "preparar-dados",
+      "name": "Code — Formatar dados e gerar token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO escala_confirmacoes\n  (escala_id, membro_id, telefone, token, status, tentativas)\nVALUES\n  ({{ $json.escala_id }}, {{ $json.membro_id }}, '{{ $json.telefone }}', '{{ $json.token }}', 'pendente', 1)\nON DUPLICATE KEY UPDATE\n  tentativas = tentativas + 1,\n  atualizado_em = NOW()",
+        "options": {}
+      },
+      "id": "inserir-confirmacao",
+      "name": "MySQL — Inserir escala_confirmacoes",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $('Code — Formatar dados e gerar token').item.json.telefone.replace('+','') }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Code — Formatar dados e gerar token').item.json.telefone }}\",\n  \"type\": \"template\",\n  \"template\": {\n    \"name\": \"confirmacao_escala\",\n    \"language\": { \"code\": \"pt_BR\" },\n    \"components\": [\n      {\n        \"type\": \"body\",\n        \"parameters\": [\n          { \"type\": \"text\", \"text\": \"{{ $('Code — Formatar dados e gerar token').item.json.param1 }}\" },\n          { \"type\": \"text\", \"text\": \"{{ $('Code — Formatar dados e gerar token').item.json.param2 }}\" },\n          { \"type\": \"text\", \"text\": \"{{ $('Code — Formatar dados e gerar token').item.json.param3 }}\" },\n          { \"type\": \"text\", \"text\": \"{{ $('Code — Formatar dados e gerar token').item.json.param4 }}\" },\n          { \"type\": \"text\", \"text\": \"{{ $('Code — Formatar dados e gerar token').item.json.param5 }}\" }\n        ]\n      }\n    ]\n  }\n}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "chamar-api-meta",
+      "name": "HTTP — Enviar template Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300],
+      "credentials": { "httpHeaderAuth": { "id": "COLOQUE_ID_CREDENCIAL_WA_BEARER", "name": "WhatsApp Bearer Token" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-message-id",
+              "leftValue": "={{ $json.messages[0].id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "verificar-envio",
+      "name": "Verificar — Envio OK ou falhou",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO whatsapp_envios\n  (confirmacao_id, message_id, status_api, resposta_api)\nSELECT ec.id, '{{ $('HTTP — Enviar template Meta').item.json.messages[0].id }}', 'sent', '{{ JSON.stringify($('HTTP — Enviar template Meta').item.json) }}'\nFROM escala_confirmacoes ec\nWHERE ec.escala_id = {{ $('Code — Formatar dados e gerar token').item.json.escala_id }}\nORDER BY ec.criado_em DESC LIMIT 1;\n\nUPDATE escala_confirmacoes SET status = 'enviado'\nWHERE escala_id = {{ $('Code — Formatar dados e gerar token').item.json.escala_id }}\n  AND status = 'pendente';",
+        "options": {}
+      },
+      "id": "registrar-sucesso",
+      "name": "MySQL — Registrar envio OK",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [2000, 200],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO whatsapp_envios\n  (confirmacao_id, message_id, status_api, erro)\nSELECT ec.id, NULL, 'failed', '{{ JSON.stringify($('HTTP — Enviar template Meta').item.json.error) }}'\nFROM escala_confirmacoes ec\nWHERE ec.escala_id = {{ $('Code — Formatar dados e gerar token').item.json.escala_id }}\nORDER BY ec.criado_em DESC LIMIT 1;\n\nUPDATE escala_confirmacoes SET status = 'erro_envio'\nWHERE escala_id = {{ $('Code — Formatar dados e galar token').item.json.escala_id }}\n  AND status = 'pendente';",
+        "options": {}
+      },
+      "id": "registrar-falha",
+      "name": "MySQL — Registrar falha de envio",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [2000, 420],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ sucesso: true, status: 'enviado', membro: $('Code — Formatar dados e gerar token').item.json.membro_nome, telefone: $('Code — Formatar dados e gerar token').item.json.telefone, message_id: $('HTTP — Enviar template Meta').item.json.messages[0].id }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "resposta-sucesso",
+      "name": "Resposta — Sucesso 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2220, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ sucesso: false, status: 'erro_envio', erro: $('HTTP — Enviar template Meta').item.json.error }) }}",
+        "options": { "responseCode": 500 }
+      },
+      "id": "resposta-falha",
+      "name": "Resposta — Falha 500",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2220, 420]
+    }
+  ],
+  "connections": {
+    "Webhook — Recebe escala_id": {
+      "main": [[{ "node": "Validar — escala_id presente", "type": "main", "index": 0 }]]
+    },
+    "Validar — escala_id presente": {
+      "main": [
+        [{ "node": "MySQL — Buscar Escala", "type": "main", "index": 0 }],
+        [{ "node": "Resposta — Erro 400",   "type": "main", "index": 0 }]
+      ]
+    },
+    "MySQL — Buscar Escala": {
+      "main": [[{ "node": "Validar — Escala e telefone existem", "type": "main", "index": 0 }]]
+    },
+    "Validar — Escala e telefone existem": {
+      "main": [
+        [{ "node": "Code — Formatar dados e gerar token", "type": "main", "index": 0 }],
+        [{ "node": "Resposta — Erro 422", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code — Formatar dados e gerar token": {
+      "main": [[{ "node": "MySQL — Inserir escala_confirmacoes", "type": "main", "index": 0 }]]
+    },
+    "MySQL — Inserir escala_confirmacoes": {
+      "main": [[{ "node": "HTTP — Enviar template Meta", "type": "main", "index": 0 }]]
+    },
+    "HTTP — Enviar template Meta": {
+      "main": [[{ "node": "Verificar — Envio OK ou falhou", "type": "main", "index": 0 }]]
+    },
+    "Verificar — Envio OK ou falhou": {
+      "main": [
+        [{ "node": "MySQL — Registrar envio OK",      "type": "main", "index": 0 }],
+        [{ "node": "MySQL — Registrar falha de envio", "type": "main", "index": 0 }]
+      ]
+    },
+    "MySQL — Registrar envio OK": {
+      "main": [[{ "node": "Resposta — Sucesso 200", "type": "main", "index": 0 }]]
+    },
+    "MySQL — Registrar falha de envio": {
+      "main": [[{ "node": "Resposta — Falha 500", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": false },
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0,
+  "tags": [{ "name": "WhatsApp" }, { "name": "Gerenciador Equipes" }]
+}

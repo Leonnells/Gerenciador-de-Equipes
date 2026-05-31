@@ -1,0 +1,335 @@
+{
+  "name": "WA — Receber Resposta do Membro",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-meta",
+      "name": "Webhook — Meta envia aqui",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": { "responseCode": 200 }
+      },
+      "id": "resposta-imediata",
+      "name": "Resposta — 200 OK imediato",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [460, 480],
+      "notes": "Meta exige resposta em menos de 20s. Respondemos antes de processar."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-get",
+              "leftValue": "={{ $json.method }}",
+              "rightValue": "GET",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "verificar-metodo",
+      "name": "É GET (verificação Meta)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "handshake-meta",
+      "name": "Resposta — Handshake Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 180],
+      "notes": "Verifica token e devolve o challenge para a Meta confirmar o webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrai mensagem do payload da Meta\nconst payload = $input.first().json.body;\n\n// Verifica se é um evento de mensagem\nconst entry   = payload?.entry?.[0];\nconst change  = entry?.changes?.[0]?.value;\nconst msg     = change?.messages?.[0];\nconst status  = change?.statuses?.[0];\n\nif (!msg && !status) {\n  return [{ json: { tipo: 'ignorar', motivo: 'Sem mensagem ou status reconhecível' } }];\n}\n\n// Evento de status de entrega (delivered / read / failed)\nif (status && !msg) {\n  return [{\n    json: {\n      tipo:       'status',\n      message_id: status.id,\n      status_api: status.status,\n      telefone:   '+' + status.recipient_id.replace(/\\D/g, '')\n    }\n  }];\n}\n\n// Mensagem de texto do membro\nif (msg.type !== 'text') {\n  return [{ json: { tipo: 'ignorar', motivo: 'Mensagem não é texto: ' + msg.type } }];\n}\n\nconst texto    = msg.text?.body || '';\nconst telefone = '+' + msg.from.replace(/\\D/g, '');\n\n// Normaliza: remove acentos, lowercase, trim\nfunction normalizar(t) {\n  return t.toLowerCase().trim()\n    .replace(/[áàãâ]/g,'a').replace(/[éê]/g,'e')\n    .replace(/[í]/g,'i').replace(/[óôõ]/g,'o')\n    .replace(/[úü]/g,'u').replace(/ç/g,'c');\n}\n\nconst textoNorm = normalizar(texto);\n\n// Palavras-chave de confirmação\nconst confirmar = ['confirmar','sim','confirmo','presente','ok','vou'];\nconst recusar   = ['nao posso','não posso','nao','não','faltarei','ausente','impossivel','impossível'];\n\nlet decisao = 'nao_reconhecido';\nfor (const p of confirmar) { if (textoNorm.includes(normalizar(p))) { decisao = 'confirmado'; break; } }\nif (decisao === 'nao_reconhecido') {\n  for (const p of recusar) { if (textoNorm.includes(normalizar(p))) { decisao = 'recusado'; break; } }\n}\n\nreturn [{\n  json: {\n    tipo:       'mensagem',\n    telefone,\n    texto,\n    textoNorm,\n    decisao,\n    message_id: msg.id\n  }\n}];"
+      },
+      "id": "extrair-payload",
+      "name": "Code — Extrair e normalizar payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.tipo }}", "rightValue": "mensagem", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.tipo }}", "rightValue": "status",   "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $json.tipo }}", "rightValue": "ignorar",  "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-tipo",
+      "name": "Switch — Tipo de evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ec.id AS confirmacao_id, ec.escala_id, ec.status, ec.token,\n       e.data_escala, e.horario, e.funcao,\n       mem.nome AS membro_nome,\n       min.nome AS ministerio\nFROM escala_confirmacoes ec\nJOIN escalas      e   ON e.id   = ec.escala_id\nLEFT JOIN membros mem ON mem.id = ec.membro_id\nLEFT JOIN ministerios min ON min.id = e.ministerio_id\nWHERE ec.telefone = '{{ $json.telefone }}'\n  AND ec.status IN ('pendente','enviado')\nORDER BY ec.criado_em DESC\nLIMIT 1",
+        "options": {}
+      },
+      "id": "buscar-confirmacao",
+      "name": "MySQL — Buscar confirmação pendente",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1120, 200],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE whatsapp_envios SET status_api = '{{ $('Code — Extrair e normalizar payload').item.json.status_api }}'\nWHERE message_id = '{{ $('Code — Extrair e normalizar payload').item.json.message_id }}';\n\n{{ $('Code — Extrair e normalizar payload').item.json.status_api === 'failed' ?\n\"UPDATE escala_confirmacoes ec JOIN whatsapp_envios we ON we.confirmacao_id = ec.id SET ec.status = 'erro_envio' WHERE we.message_id = '\" + $('Code — Extrair e normalizar payload').item.json.message_id + \"' AND ec.status = 'enviado';\" : '-- status ok, sem ação adicional' }}",
+        "options": {}
+      },
+      "id": "atualizar-status-entrega",
+      "name": "MySQL — Atualizar status entrega",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1120, 380],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-confirmacao-existe",
+              "leftValue": "={{ $json.confirmacao_id }}",
+              "rightValue": "",
+              "operator": { "type": "number", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "confirmacao-existe",
+      "name": "Confirmação existe no banco?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $('Code — Extrair e normalizar payload').item.json.telefone.replace('+','') }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Code — Extrair e normalizar payload').item.json.telefone }}\",\n  \"type\": \"text\",\n  \"text\": { \"body\": \"Olá! Não encontramos nenhuma escala pendente para este número. Em caso de dúvidas, fale com seu supervisor.\" }\n}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "msg-sem-escala",
+      "name": "HTTP — Avisar sem escala pendente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 380],
+      "credentials": { "httpHeaderAuth": { "id": "COLOQUE_ID_CREDENCIAL_WA_BEARER", "name": "WhatsApp Bearer Token" } }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "conditions": [{ "leftValue": "={{ $('Code — Extrair e normalizar payload').item.json.decisao }}", "rightValue": "confirmado",      "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $('Code — Extrair e normalizar payload').item.json.decisao }}", "rightValue": "recusado",        "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+            { "conditions": { "conditions": [{ "leftValue": "={{ $('Code — Extrair e normalizar payload').item.json.decisao }}", "rightValue": "nao_reconhecido", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-decisao",
+      "name": "Switch — Decisão do membro",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE escala_confirmacoes\nSET status = 'confirmado', respondido_em = NOW(), resposta_raw = '{{ $('Code — Extrair e normalizar payload').item.json.texto }}'\nWHERE id = {{ $('MySQL — Buscar confirmação pendente').item.json.confirmacao_id }};\n\nUPDATE escalas SET status = 'confirmado'\nWHERE id = {{ $('MySQL — Buscar confirmação pendente').item.json.escala_id }};",
+        "options": {}
+      },
+      "id": "gravar-confirmado",
+      "name": "MySQL — Gravar confirmado",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1780, 100],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE escala_confirmacoes\nSET status = 'recusado', respondido_em = NOW(), resposta_raw = '{{ $('Code — Extrair e normalizar payload').item.json.texto }}'\nWHERE id = {{ $('MySQL — Buscar confirmação pendente').item.json.confirmacao_id }};\n\nUPDATE escalas SET status = 'ausente'\nWHERE id = {{ $('MySQL — Buscar confirmação pendente').item.json.escala_id }};",
+        "options": {}
+      },
+      "id": "gravar-recusado",
+      "name": "MySQL — Gravar recusado",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1780, 280],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $('Code — Extrair e normalizar payload').item.json.telefone.replace('+','') }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Code — Extrair e normalizar payload').item.json.telefone }}\",\n  \"type\": \"text\",\n  \"text\": { \"body\": \"✅ Presença confirmada! Obrigado, {{ $('MySQL — Buscar confirmação pendente').item.json.membro_nome }}. Te esperamos no dia {{ $('MySQL — Buscar confirmação pendente').item.json.data_escala }} às {{ $('MySQL — Buscar confirmação pendente').item.json.horario.substring(0,5) }} como {{ $('MySQL — Buscar confirmação pendente').item.json.funcao }} no ministério {{ $('MySQL — Buscar confirmação pendente').item.json.ministerio }}.\" }\n}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "msg-confirmado",
+      "name": "HTTP — Responder confirmado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 100],
+      "credentials": { "httpHeaderAuth": { "id": "COLOQUE_ID_CREDENCIAL_WA_BEARER", "name": "WhatsApp Bearer Token" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $('Code — Extrair e normalizar payload').item.json.telefone.replace('+','') }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Code — Extrair e normalizar payload').item.json.telefone }}\",\n  \"type\": \"text\",\n  \"text\": { \"body\": \"❌ Recebemos sua ausência, {{ $('MySQL — Buscar confirmação pendente').item.json.membro_nome }}. Seu supervisor será notificado. Qualquer dúvida, entre em contato.\" }\n}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "msg-recusado",
+      "name": "HTTP — Responder recusado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 280],
+      "credentials": { "httpHeaderAuth": { "id": "COLOQUE_ID_CREDENCIAL_WA_BEARER", "name": "WhatsApp Bearer Token" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $('Code — Extrair e normalizar payload').item.json.telefone.replace('+','') }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Code — Extrair e normalizar payload').item.json.telefone }}\",\n  \"type\": \"text\",\n  \"text\": { \"body\": \"Olá, {{ $('MySQL — Buscar confirmação pendente').item.json.membro_nome }}! Não entendemos sua resposta.\\n\\nVocê está escalado(a) para *{{ $('MySQL — Buscar confirmação pendente').item.json.ministerio }}* em *{{ $('MySQL — Buscar confirmação pendente').item.json.data_escala }}* às *{{ $('MySQL — Buscar confirmação pendente').item.json.horario.substring(0,5) }}* como *{{ $('MySQL — Buscar confirmação pendente').item.json.funcao }}*.\\n\\nResponda:\\n✅ *CONFIRMAR* — para confirmar presença\\n❌ *NÃO POSSO* — se não puder comparecer\" }\n}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "msg-ajuda",
+      "name": "HTTP — Responder com ajuda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 460],
+      "credentials": { "httpHeaderAuth": { "id": "COLOQUE_ID_CREDENCIAL_WA_BEARER", "name": "WhatsApp Bearer Token" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO webhook_logs (tipo, de, conteudo, payload_raw, processado)\nVALUES (\n  '{{ $('Code — Extrair e normalizar payload').item.json.tipo }}',\n  '{{ $('Code — Extrair e normalizar payload').item.json.telefone }}',\n  '{{ $('Code — Extrair e normalizar payload').item.json.texto || $('Code — Extrair e normalizar payload').item.json.status_api }}',\n  '{{ JSON.stringify($('Webhook — Meta envia aqui').item.json.body).replace(/'/g, \"''\") }}',\n  1\n)",
+        "options": {}
+      },
+      "id": "log-webhook",
+      "name": "MySQL — Log webhook",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [1120, 560],
+      "credentials": { "mySql": { "id": "COLOQUE_ID_CREDENCIAL_MYSQL", "name": "gerenciador_equipes" } }
+    }
+  ],
+  "connections": {
+    "Webhook — Meta envia aqui": {
+      "main": [[
+        { "node": "Resposta — 200 OK imediato",          "type": "main", "index": 0 },
+        { "node": "É GET (verificação Meta)?",            "type": "main", "index": 0 }
+      ]]
+    },
+    "É GET (verificação Meta)?": {
+      "main": [
+        [{ "node": "Resposta — Handshake Meta",           "type": "main", "index": 0 }],
+        [{ "node": "Code — Extrair e normalizar payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code — Extrair e normalizar payload": {
+      "main": [[
+        { "node": "Switch — Tipo de evento",              "type": "main", "index": 0 },
+        { "node": "MySQL — Log webhook",                  "type": "main", "index": 0 }
+      ]]
+    },
+    "Switch — Tipo de evento": {
+      "main": [
+        [{ "node": "MySQL — Buscar confirmação pendente", "type": "main", "index": 0 }],
+        [{ "node": "MySQL — Atualizar status entrega",    "type": "main", "index": 0 }]
+      ]
+    },
+    "MySQL — Buscar confirmação pendente": {
+      "main": [[{ "node": "Confirmação existe no banco?", "type": "main", "index": 0 }]]
+    },
+    "Confirmação existe no banco?": {
+      "main": [
+        [{ "node": "Switch — Decisão do membro",          "type": "main", "index": 0 }],
+        [{ "node": "HTTP — Avisar sem escala pendente",   "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch — Decisão do membro": {
+      "main": [
+        [{ "node": "MySQL — Gravar confirmado",           "type": "main", "index": 0 }],
+        [{ "node": "MySQL — Gravar recusado",             "type": "main", "index": 0 }],
+        [{ "node": "HTTP — Responder com ajuda",          "type": "main", "index": 0 }]
+      ]
+    },
+    "MySQL — Gravar confirmado": {
+      "main": [[{ "node": "HTTP — Responder confirmado",  "type": "main", "index": 0 }]]
+    },
+    "MySQL — Gravar recusado": {
+      "main": [[{ "node": "HTTP — Responder recusado",    "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": false },
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0,
+  "tags": [{ "name": "WhatsApp" }, { "name": "Gerenciador Equipes" }]
+}

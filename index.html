@@ -473,7 +473,7 @@ tbody td{padding:12px 14px}
   <div class="card">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Equipe</th><th>Data</th><th>Horário</th><th>Membro</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Equipe</th><th>Data</th><th>Horário</th><th>Membro</th><th>Função</th><th>Status</th><th>WhatsApp</th><th>Ações</th></tr></thead>
         <tbody id="tbody-escalas"></tbody>
       </table>
     </div>
@@ -832,6 +832,11 @@ tbody td{padding:12px 14px}
 <div class="toast-container" id="toasts"></div>
 
 <script>
+/* ================================================================
+   CONFIGURAÇÃO N8N — substitua pela URL real do seu workflow
+   ================================================================ */
+const N8N_ENVIAR_URL = 'https://SEU-SUBDOMINIO.app.n8n.cloud/webhook/enviar-confirmacao';
+
 /* ================================================================
    BANCO DE DADOS EM MEMÓRIA — campos alinhados com MySQL e reports
    ================================================================ */
@@ -1481,7 +1486,14 @@ function carregarEscalas(pagina=1) {
 
   const tbody = document.getElementById('tbody-escalas');
   tbody.innerHTML = lista.length
-    ? lista.map(e=>`
+    ? lista.map(e=>{
+        const waBtnStyle = e.wa_status === 'confirmado' ? 'color:#16A34A' :
+                           e.wa_status === 'enviado'    ? 'color:#F97316' :
+                           e.wa_status === 'recusado'   ? 'color:#EF4444' : 'color:var(--muted)';
+        const waTitle    = e.wa_status === 'confirmado' ? 'Confirmado ✅' :
+                           e.wa_status === 'enviado'    ? 'Aguardando resposta ⏳' :
+                           e.wa_status === 'recusado'   ? 'Recusado ❌' : 'Enviar confirmação';
+        return `
         <tr>
           <td><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:${minCor(e.ministerio_id)}">${minIcon(e.ministerio_id)} ${e.ministerio||'—'}</span></td>
           <td style="color:var(--muted)">${fmtData(e.data_escala)}</td>
@@ -1490,11 +1502,18 @@ function carregarEscalas(pagina=1) {
           <td style="color:var(--muted)">${e.funcao||'—'}</td>
           <td>${badgeStatus(e.status)}</td>
           <td>
+            <button class="action-btn" title="${waTitle}" style="${waBtnStyle}"
+                    onclick="enviarWhatsApp(${e.id},'${e.membro_nome||''}')">
+              📲
+            </button>
+          </td>
+          <td>
             <button class="action-btn" onclick="editarEscala(${e.id})">✏️</button>
             <button class="action-btn" onclick="excluirEscala(${e.id})">🗑</button>
           </td>
-        </tr>`).join('')
-    : `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma escala cadastrada</td></tr>`;
+        </tr>`;}
+      ).join('')
+    : `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma escala cadastrada</td></tr>`;
 
   const pag = document.getElementById('pagination-escalas');
   pag.innerHTML = `
@@ -1556,6 +1575,49 @@ function excluirEscala(id) {
     showToast('Escala removida','warning');
     carregarEscalas(escalasPage);
   });
+}
+
+/* ================================================================
+   WHATSAPP — Envio via N8N
+   ================================================================ */
+async function enviarWhatsApp(escalaId, membroNome) {
+  const e = DB.escalas.find(x=>x.id===escalaId);
+  if (!e) return;
+
+  // Verifica se membro tem telefone cadastrado
+  const mem = DB.membros.find(m=>m.id===e.membro_id);
+  if (!mem?.telefone) {
+    showToast(`${membroNome} não tem telefone cadastrado`, 'error');
+    return;
+  }
+
+  showConfirm(
+    'Enviar confirmação via WhatsApp',
+    `Enviar mensagem de confirmação para ${membroNome} (${mem.telefone})?`,
+    async () => {
+      showToast('Enviando…', 'info');
+      try {
+        const resp = await fetch(N8N_ENVIAR_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ escala_id: escalaId }),
+        });
+        const data = await resp.json();
+        if (data.sucesso || data.status === 'enviado') {
+          // Marca localmente como enviado para feedback visual imediato
+          const idx = DB.escalas.findIndex(x=>x.id===escalaId);
+          if (idx>=0) DB.escalas[idx].wa_status = 'enviado';
+          showToast(`✅ Mensagem enviada para ${membroNome}!`, 'success');
+          carregarEscalas(escalasPage);
+        } else {
+          showToast(`Falha no envio: ${data.erro || 'verifique o N8N'}`, 'error');
+        }
+      } catch (err) {
+        showToast('Erro de conexão com o N8N. Verifique a URL configurada.', 'error');
+        console.error('Erro N8N:', err);
+      }
+    }
+  );
 }
 
 function exportarEscalas() {
