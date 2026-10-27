@@ -3,532 +3,238 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerenciador de Equipes</title>
+<title>Gerenciador de Equipes — Igreja Verbo da Vida</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --teal:#0D9488;--teal-light:#CCFBF1;--teal-dark:#0F766E;
-  --orange:#F97316;--purple:#7C3AED;--purple-light:#EDE9FE;
-  --green:#16A34A;--green-light:#D1FAE5;
-  --yellow:#EAB308;--yellow-light:#FEF3C7;--pink:#EC4899;
-  --bg:#F1F5F9;--white:#fff;--text:#1A1A2E;--muted:#64748B;--border:#E2E8F0;
-  --sidebar-w:220px;--sidebar-expanded:340px;--shadow:0 4px 16px rgba(0,0,0,.10);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-
-/* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,.05)}
-.logo{padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
-.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo-text{font-size:13px;font-weight:700;line-height:1.3}
-nav{padding:16px 12px;flex:1;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:2px;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
-.nav-item:hover{background:var(--bg);color:var(--text)}
-.nav-item.active{background:#F0FDF9;color:var(--teal);font-weight:700;border-left:3px solid var(--teal)}
-.nav-icon{font-size:15px;width:20px;text-align:center}
-.sidebar-btn{margin:12px;background:var(--orange);color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:calc(100% - 24px);transition:background .15s;font-family:inherit;flex-shrink:0}
-.sidebar-btn:hover{background:#ea6c00}
-
-/* SIDEBAR — MINISTÉRIOS */
-.sidebar-min-section{border-top:1px solid var(--border);padding:10px 12px 0;flex-shrink:0}
-.sidebar-min-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.sidebar-min-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.sidebar-min-add{width:20px;height:20px;border-radius:5px;background:var(--teal);color:#fff;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
-.sidebar-min-add:hover{background:var(--teal-dark)}
-.sidebar-min-list{display:flex;flex-direction:column;gap:1px;max-height:180px;overflow-y:auto;padding-bottom:8px}
-.sidebar-min-list::-webkit-scrollbar{width:3px}
-.sidebar-min-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.sidebar-min-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .15s}
-.sidebar-min-item:hover,.sidebar-min-item.selected{background:var(--bg)}
-.sidebar-min-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
-.sidebar-min-nome{font-size:12px;font-weight:600;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sidebar-min-count{font-size:10px;font-weight:700;background:var(--border);color:var(--muted);padding:1px 5px;border-radius:8px;flex-shrink:0}
-.sidebar-min-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;opacity:0;transition:opacity .15s;padding:1px 3px;border-radius:3px;flex-shrink:0}
-.sidebar-min-item:hover .sidebar-min-del{opacity:1}
-.sidebar-min-del:hover{color:#EF4444;background:#FEE2E2}
-
-/* PAINEL DETALHE MINISTÉRIO */
-.min-detail-panel{position:fixed;top:0;left:calc(-1 * var(--sidebar-expanded));bottom:0;width:var(--sidebar-expanded);background:#fff;border-right:1px solid var(--border);z-index:99;transition:left .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
-.min-detail-panel.open{left:var(--sidebar-w);box-shadow:4px 0 20px rgba(0,0,0,.10)}
-body.min-panel-open .main{margin-left:calc(var(--sidebar-w) + var(--sidebar-expanded))}
-body.min-panel-open .topbar{left:calc(var(--sidebar-w) + var(--sidebar-expanded))}
-.min-detail-header{padding:18px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.min-detail-back{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px;border-radius:6px;transition:background .15s}
-.min-detail-back:hover{background:var(--bg)}
-.min-detail-badge{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.min-detail-info{flex:1;min-width:0}
-.min-detail-nome{font-size:14px;font-weight:800}
-.min-detail-sub{font-size:11px;color:var(--muted)}
-.min-detail-edit{background:none;border:1.5px solid var(--border);border-radius:7px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
-.min-detail-edit:hover{border-color:var(--teal);color:var(--teal)}
-.min-detail-body{flex:1;overflow-y:auto;padding:14px}
-.min-detail-body::-webkit-scrollbar{width:3px}
-.min-detail-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.min-section{margin-bottom:18px}
-.min-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.min-section-count{font-size:10px;font-weight:700;background:var(--border);color:var(--muted);padding:1px 6px;border-radius:8px}
-.min-pessoa-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--bg);margin-bottom:5px;transition:background .15s}
-.min-pessoa-item:hover{background:#E2E8F0}
-.min-pessoa-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0}
-.min-pessoa-nome{font-size:12px;font-weight:700}
-.min-pessoa-role{font-size:11px;color:var(--muted)}
-.min-pessoa-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;white-space:nowrap}
-.min-empty-pessoas{text-align:center;padding:14px;color:var(--muted);font-size:12px;font-style:italic}
-
-/* TOPBAR */
-.topbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:62px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;padding:0 28px;gap:14px;z-index:90;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.notif-btn{position:relative;background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);padding:6px;transition:transform .15s}
-.notif-btn:hover{transform:scale(1.15)}
-.notif-badge{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid #fff}
-.notif-badge.hidden{display:none}
-.avatar{width:34px;height:34px;background:linear-gradient(135deg,var(--teal),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
-
-/* MAIN */
-.main{margin-left:var(--sidebar-w);margin-top:62px;flex:1;padding:24px;min-height:calc(100vh - 62px)}
-.page{display:none}
-.page.active{display:block;animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-/* COMMON */
-.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-.page-title{font-size:26px;font-weight:800}
-.page-subtitle{font-size:13px;color:var(--muted);margin-top:2px}
-.btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
-.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:var(--teal-dark);transform:translateY(-1px)}
-.btn-outline{background:#fff;color:var(--teal);border:2px solid var(--teal)}.btn-outline:hover{background:var(--teal-light)}
-.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:#ea6c00}
-.btn-danger{background:#EF4444;color:#fff}.btn-danger:hover{background:#DC2626}
-.btn-gap{display:flex;gap:8px}
-.card{background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.card-title{font-size:14px;font-weight:700;margin-bottom:14px}
-
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
-.kpi-card{border-radius:14px;padding:22px;color:#fff;position:relative;overflow:hidden}
-.kpi-card::after{content:'';position:absolute;right:-20px;top:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.12)}
-.kpi-label{font-size:12px;font-weight:600;opacity:.85;margin-bottom:6px}
-.kpi-number{font-size:40px;font-weight:800;line-height:1;margin-bottom:6px}
-.kpi-sub{font-size:11px;opacity:.7}
-
-/* TABLE */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:#F8FAFC;border-bottom:2px solid var(--border)}
-tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
-tbody tr:hover{background:#F8FAFC}
-tbody td{padding:12px 14px}
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:18px;font-size:11px;font-weight:700}
-.badge-green{background:var(--green-light);color:#065F46}
-.badge-yellow{background:var(--yellow-light);color:#78350F}
-.badge-red{background:#FEE2E2;color:#991B1B}
-.badge-blue{background:#DBEAFE;color:#1E40AF}
-.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:18px;font-size:11px;font-weight:600;margin:2px}
-.action-btn{background:none;border:none;cursor:pointer;padding:3px 7px;border-radius:6px;font-size:14px;transition:background .15s;color:var(--muted)}
-.action-btn:hover{background:var(--bg);color:var(--text)}
-
-/* MEMBERS GRID */
-.members-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.member-card{background:#fff;border-radius:13px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);transition:box-shadow .2s,transform .2s}
-.member-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.10);transform:translateY(-2px)}
-.member-header{display:flex;align-items:center;gap:11px;margin-bottom:12px}
-.member-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0}
-.member-name{font-weight:700;font-size:13px}
-.member-role{font-size:11px;color:var(--muted)}
-.member-more{margin-left:auto;color:var(--muted);cursor:pointer;font-size:17px;background:none;border:none;padding:3px 7px;border-radius:6px;transition:background .15s}
-.member-more:hover{background:var(--bg)}
-.member-tags{display:flex;flex-wrap:wrap;gap:3px}
-
-/* SUPERVISORES CARDS */
-.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.sup-card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;transition:box-shadow .2s,transform .2s}
-.sup-card:hover{box-shadow:0 5px 20px rgba(0,0,0,.10);transform:translateY(-2px)}
-.sup-card-header{padding:18px 18px 14px;display:flex;align-items:center;gap:12px;position:relative}
-.sup-card-header::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--sup-color,var(--teal));border-radius:16px 16px 0 0}
-.sup-avatar-lg{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;flex-shrink:0;background:var(--sup-color,var(--teal));box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.sup-info{flex:1;min-width:0}
-.sup-name{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sup-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.sup-ministerio{margin:0 14px 10px;padding:9px 12px;border-radius:9px;background:var(--sup-bg,#F0FDF9);display:flex;align-items:center;justify-content:space-between}
-.sup-ministerio-nome{font-weight:700;font-size:12px;color:var(--sup-color,var(--teal));display:flex;align-items:center;gap:5px}
-.sup-ministerio-count{font-size:10px;font-weight:700;background:var(--sup-color,var(--teal));color:#fff;padding:2px 7px;border-radius:18px}
-.sup-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:none;border:none;border-top:1px solid var(--border);font-family:inherit;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:background .15s}
-.sup-toggle:hover{background:var(--bg)}
-.sup-toggle-chevron{transition:transform .25s}
-.sup-toggle.open .sup-toggle-chevron{transform:rotate(180deg)}
-.sup-membros-list{max-height:0;overflow:hidden;transition:max-height .35s ease}
-.sup-membros-list.open{max-height:500px}
-.sup-membro-row{display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid #f1f5f9;transition:background .1s}
-.sup-membro-row:hover{background:#F8FAFC}
-.sup-membro-row:last-child{border-bottom:none;padding-bottom:12px}
-.sup-membro-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;flex-shrink:0}
-.sup-membro-nome{font-size:12px;font-weight:600}
-.sup-membro-funcao{font-size:11px;color:var(--muted)}
-.sup-membro-tag{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
-.sup-empty{padding:16px;text-align:center;font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border)}
-.sup-stats{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.sup-stat{background:#fff;border-radius:11px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);flex:1;min-width:130px}
-.sup-stat-icon{font-size:20px}
-.sup-stat-num{font-size:20px;font-weight:800;line-height:1}
-.sup-stat-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-.view-toggle{display:flex;gap:5px}
-.view-btn{background:none;border:1.5px solid var(--border);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s}
-.view-btn.active,.view-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
-
-/* FILTROS */
-.filters{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
-.filter-select{padding:7px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-weight:500;background:#fff;font-family:inherit;cursor:pointer;appearance:none}
-.filter-input{flex:1;min-width:180px;padding:8px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none}
-.filter-input:focus{border-color:var(--teal)}
-
-/* CALENDÁRIO */
-.cal-table{width:100%;border-collapse:collapse;table-layout:fixed}
-.cal-table th{padding:9px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.cal-table td{padding:5px;height:86px;max-height:86px;vertical-align:top;border:1px solid var(--border);cursor:pointer;transition:background .1s;overflow:hidden}
-.cal-table td:hover{background:#F0FDF9}
-.cal-table td.today{background:#F0FDF9;border-color:var(--teal)}
-.cal-day-num{color:var(--muted);margin-bottom:2px;font-size:11px;font-weight:600}
-.cal-cell-inner{overflow:hidden;display:flex;flex-direction:column;gap:2px}
-.cal-event{display:block;font-size:10px;font-weight:600;padding:2px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.cal-more{font-size:10px;color:var(--muted);font-weight:700;padding:1px 3px}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.cal-nav{background:none;border:1.5px solid var(--border);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-.cal-nav:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
-.legend{display:flex;flex-direction:column;gap:7px}
-.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
-.legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
-.event-item{border-left:3px solid;padding:9px 12px;border-radius:0 7px 7px 0;margin-bottom:8px}
-.event-title{font-size:12px;font-weight:700}
-.event-sub{font-size:11px;color:var(--muted)}
-
-/* RELATÓRIOS */
-.rel-tabs{display:flex;gap:4px;margin-bottom:18px;background:#fff;border-radius:11px;padding:5px;box-shadow:0 1px 4px rgba(0,0,0,.06);width:fit-content}
-.rel-tab{padding:7px 16px;border-radius:7px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
-.rel-tab:hover{color:var(--text);background:var(--bg)}
-.rel-tab.active{background:var(--teal);color:#fff}
-.rel-panel{display:none}
-.rel-panel.active{display:block;animation:fadeIn .2s ease}
-.reports-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
-.report-kpi{background:#fff;border-radius:13px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.report-kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
-.report-kpi-value{font-size:34px;font-weight:800;line-height:1}
-.report-kpi-bar{height:5px;border-radius:3px;margin-top:10px}
-.presenca-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.presenca-card{background:#fff;border-radius:13px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:4px solid var(--pc)}
-.presenca-num{font-size:32px;font-weight:800;color:var(--pc);line-height:1;margin-bottom:4px}
-.presenca-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.presenca-pct{font-size:11px;font-weight:700;margin-top:5px}
-.presenca-table-wrap{overflow-x:auto;margin-top:4px}
-.presenca-table{width:100%;border-collapse:collapse;font-size:12px}
-.presenca-table th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#F8FAFC;border-bottom:2px solid var(--border)}
-.presenca-table td{padding:11px 12px;border-bottom:1px solid var(--border)}
-.presenca-table tr:last-child td{border-bottom:none}
-.mini-bar-wrap{display:flex;align-items:center;gap:7px}
-.mini-bar-bg{flex:1;height:7px;background:var(--border);border-radius:3px;overflow:hidden}
-.mini-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
-.bar-chart{display:flex;align-items:flex-end;gap:8px;height:130px}
-.bar-group{flex:1;display:flex;align-items:flex-end;gap:3px}
-.bar{flex:1;border-radius:3px 3px 0 0;transition:height .5s ease}
-.bar-labels{display:flex;justify-content:space-around;margin-top:7px}
-.bar-label{font-size:10px;color:var(--muted);text-align:center;flex:1}
-
-/* PAGINAÇÃO */
-.pagination{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:14px;font-size:12px;color:var(--muted)}
-.page-btn{border:1.5px solid var(--border);background:#fff;border-radius:5px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;font-family:inherit}
-.page-btn:hover,.page-btn.active-page{background:var(--teal);color:#fff;border-color:var(--teal)}
-.page-btn:disabled{opacity:.4;cursor:not-allowed}
-
-/* LAYOUT */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.col-7-3{display:grid;grid-template-columns:1.8fr 1fr;gap:18px}
-.col-6-4{display:grid;grid-template-columns:3fr 2fr;gap:18px}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:18px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);animation:slideUp .25s ease}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.modal-title{font-size:18px;font-weight:800}
-.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:3px;border-radius:7px;transition:background .15s}
-.modal-close:hover{background:var(--bg)}
-.form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
-.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;background:#fff}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal)}
-.form-textarea{resize:none;min-height:60px;max-height:90px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
-.min-checkboxes{display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;padding:3px 0}
-.min-checkbox-item{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:7px;cursor:pointer;transition:background .1s;user-select:none}
-.min-checkbox-item:hover{background:var(--bg)}
-.min-checkbox-item input{accent-color:var(--teal);width:15px;height:15px;cursor:pointer;flex-shrink:0}
-.min-checkbox-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
-.min-checkbox-label{font-size:13px;font-weight:600}
-
-/* TOAST */
-.toast-container{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:7px}
-.toast{background:#1A1A2E;color:#fff;padding:12px 18px;border-radius:11px;font-size:13px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:9px;animation:slideUp .25s ease;max-width:300px}
-.toast.success{background:var(--teal)}.toast.error{background:#EF4444}.toast.warning{background:var(--orange)}
-
-/* EMPTY / LOADING */
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-state-icon{font-size:44px;margin-bottom:10px}
-.empty-state-text{font-size:14px;font-weight:600}
-.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);gap:10px;font-weight:600}
-.spinner{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* CONFIRM */
-.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:none;align-items:center;justify-content:center}
-.confirm-overlay.open{display:flex}
-.confirm-box{background:#fff;border-radius:14px;padding:26px;max-width:340px;width:90%;box-shadow:var(--shadow);text-align:center}
-.confirm-icon{font-size:38px;margin-bottom:10px}
-.confirm-title{font-size:17px;font-weight:800;margin-bottom:7px}
-.confirm-msg{font-size:13px;color:var(--muted);margin-bottom:22px}
-.confirm-btns{display:flex;gap:8px;justify-content:center}
-</style>
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
+<!-- ══════════════ TOPBAR ══════════════ -->
+<header class="topbar">
   <div class="logo">
     <div class="logo-icon">🔥</div>
-    <div class="logo-text">Gerenciador<br>de Equipes</div>
+    <div>
+      <div class="logo-text">Gerenciador de Equipes</div>
+      <div class="logo-sub">Igreja Verbo da Vida · Bauru</div>
+    </div>
   </div>
-  <nav>
-    <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span> Home</button>
-    <button class="nav-item" onclick="showPage('supervisores',this)"><span class="nav-icon">👤</span> Supervisores</button>
-    <button class="nav-item" onclick="showPage('membros',this)"><span class="nav-icon">👥</span> Membros</button>
-    <button class="nav-item" onclick="showPage('calendario',this)"><span class="nav-icon">📅</span> Calendário</button>
-    <button class="nav-item" onclick="showPage('escalas',this)"><span class="nav-icon">📋</span> Escalas</button>
-    <button class="nav-item" onclick="showPage('relatorios',this)"><span class="nav-icon">📊</span> Relatórios</button>
+
+  <nav class="tabs">
+    <button class="tab active" onclick="showPage('dashboard',this)"><span class="tab-icon">🏠</span>Dashboard</button>
+    <button class="tab" onclick="showPage('ministerios',this)"><span class="tab-icon">⛪</span>Ministérios</button>
+    <button class="tab" onclick="showPage('supervisores',this)"><span class="tab-icon">👤</span>Supervisores</button>
+    <button class="tab" onclick="showPage('membros',this)"><span class="tab-icon">👥</span>Membros</button>
+    <button class="tab" onclick="showPage('escalas',this)"><span class="tab-icon">📋</span>Escalas<span class="tab-badge" id="badge-escalas" style="display:none">0</span></button>
+    <button class="tab" onclick="showPage('calendario',this)"><span class="tab-icon">📅</span>Calendário</button>
+    <button class="tab" onclick="showPage('relatorios',this)"><span class="tab-icon">📊</span>Relatórios</button>
   </nav>
-  <div class="sidebar-min-section">
-    <div class="sidebar-min-header">
-      <span class="sidebar-min-title">⛪ Ministérios</span>
-      <button class="sidebar-min-add" onclick="abrirModalMinisterio()" title="Novo ministério">+</button>
-    </div>
-    <div class="sidebar-min-list" id="sidebar-min-list"></div>
-  </div>
-  <button class="sidebar-btn" onclick="openModal('modal-supervisor')">+ Supervisor</button>
-</aside>
 
-<!-- PAINEL DETALHE MINISTÉRIO -->
-<div class="min-detail-panel" id="min-detail-panel">
-  <div class="min-detail-header">
-    <button class="min-detail-back" onclick="fecharPainelMinisterio()">←</button>
-    <div class="min-detail-badge" id="mdp-badge">⛪</div>
-    <div class="min-detail-info">
-      <div class="min-detail-nome" id="mdp-nome">Ministério</div>
-      <div class="min-detail-sub" id="mdp-sub">—</div>
-    </div>
-    <button class="min-detail-edit" onclick="editarMinisterioAtual()">✏️ Editar</button>
+  <div class="topbar-right">
+    <button class="notif-btn" onclick="toggleNotif()">🔔<span class="notif-dot" id="notif-dot"></span></button>
+    <button class="avatar-btn" onclick="showToast('Perfil em breve!','warning')">LE</button>
+    <button class="btn btn-primary" style="padding:7px 14px;font-size:12px" onclick="openModal('modal-supervisor')">+ Supervisor</button>
   </div>
-  <div class="min-detail-body">
-    <div class="min-section">
-      <div class="min-section-title">👤 Supervisores <span class="min-section-count" id="mdp-count-sup">0</span></div>
-      <div id="mdp-supervisores"><div class="min-empty-pessoas">Nenhum supervisor vinculado</div></div>
-    </div>
-    <div class="min-section">
-      <div class="min-section-title">👥 Voluntários <span class="min-section-count" id="mdp-count-mem">0</span></div>
-      <div id="mdp-membros"><div class="min-empty-pessoas">Nenhum voluntário vinculado</div></div>
-    </div>
-  </div>
-</div>
+</header>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <button class="notif-btn" onclick="toggleNotificacoes()">🔔<span class="notif-badge" id="notif-badge"></span></button>
-  <div class="avatar" onclick="showToast('Perfil em breve!','warning')">LE</div>
-</div>
-
-<!-- MAIN -->
+<!-- ══════════════ MAIN ══════════════ -->
 <main class="main">
 
-<!-- DASHBOARD -->
+<!-- ────── DASHBOARD ────── -->
 <div class="page active" id="page-dashboard">
-  <div class="page-header">
-    <div><div class="page-title">Dashboard</div><div class="page-subtitle">Visão geral do sistema</div></div>
-    <button class="btn btn-primary" onclick="openModal('modal-supervisor')">+ Supervisor</button>
+  <div class="sec-header">
+    <div><div class="sec-title">Dashboard</div><div class="sec-sub">Visão geral — clique em qualquer card para ver detalhes</div></div>
+    <button class="btn btn-primary" onclick="openModal('modal-membro')">+ Novo Membro</button>
   </div>
-  <div class="kpi-grid">
-    <div class="kpi-card" style="background:linear-gradient(135deg,#0D9488,#0F766E)">
-      <div class="kpi-label">👤 Supervisores Ativos</div>
-      <div class="kpi-number" id="kpi-supervisores">—</div>
-      <div class="kpi-sub">Líderes de equipe</div>
-    </div>
-    <div class="kpi-card" style="background:linear-gradient(135deg,#F97316,#EA6C00)">
-      <div class="kpi-label">👥 Membros Cadastrados</div>
-      <div class="kpi-number" id="kpi-membros">—</div>
-      <div class="kpi-sub">Voluntários ativos</div>
-    </div>
-    <div class="kpi-card" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)">
-      <div class="kpi-label">📋 Escalas da Semana</div>
-      <div class="kpi-number" id="kpi-escalas">—</div>
-      <div class="kpi-sub">Esta semana</div>
-    </div>
-  </div>
-  <div class="col-6-4">
-    <div class="card">
-      <div class="card-title">📅 Calendário</div>
-      <div id="cal-dash"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">⚡ Próximas Escalas</div>
-      <div id="proximas-escalas"><div class="loading"><div class="spinner"></div>Carregando…</div></div>
-      <button class="btn btn-orange" style="width:100%;justify-content:center;margin-top:10px" onclick="openModal('modal-membro')">+ Membro</button>
-    </div>
-  </div>
-</div>
 
-<!-- SUPERVISORES -->
-<div class="page" id="page-supervisores">
-  <div class="page-header">
-    <div><div class="page-title">Supervisores</div><div class="page-subtitle">Hierarquia de equipes por supervisor</div></div>
-    <button class="btn btn-primary" onclick="openModal('modal-supervisor')">+ Novo Supervisor</button>
-  </div>
-  <div class="sup-stats">
-    <div class="sup-stat"><span class="sup-stat-icon">👤</span><div><div class="sup-stat-num" id="stat-total-sup">—</div><div class="sup-stat-label">Total</div></div></div>
-    <div class="sup-stat"><span class="sup-stat-icon">✅</span><div><div class="sup-stat-num" id="stat-ativos-sup">—</div><div class="sup-stat-label">Ativos</div></div></div>
-    <div class="sup-stat"><span class="sup-stat-icon">⏳</span><div><div class="sup-stat-num" id="stat-pendentes-sup">—</div><div class="sup-stat-label">Pendentes</div></div></div>
-    <div class="sup-stat"><span class="sup-stat-icon">👥</span><div><div class="sup-stat-num" id="stat-membros-sup">—</div><div class="sup-stat-label">Membros</div></div></div>
-    <div class="sup-stat"><span class="sup-stat-icon">⛪</span><div><div class="sup-stat-num" id="stat-ministerios-sup">—</div><div class="sup-stat-label">Ministérios</div></div></div>
-  </div>
-  <div class="filters">
-    <input type="text" class="filter-input" id="fil-sup-busca" placeholder="🔍 Buscar supervisor…" oninput="debounce(carregarSupervisores,300)()">
-    <select class="filter-select" id="fil-sup-min" onchange="carregarSupervisores()"><option value="">Ministério ▾</option></select>
-    <select class="filter-select" id="fil-sup-status" onchange="carregarSupervisores()">
-      <option value="">Status ▾</option><option value="ativo">Ativo</option><option value="pendente">Pendente</option><option value="inativo">Inativo</option>
-    </select>
-    <div class="view-toggle">
-      <button class="view-btn active" id="vbtn-cards" title="Cards" onclick="setView('cards')">⊞</button>
-      <button class="view-btn" id="vbtn-lista" title="Lista" onclick="setView('lista')">☰</button>
+  <!-- Resumo clicável -->
+  <div class="summary-grid">
+    <div class="summary-card" onclick="showPage('ministerios',document.querySelector('.tab:nth-child(2)'))">
+      <div class="summary-card-header">
+        <div class="summary-card-icon" style="background:#F0FDF9">⛪</div>
+        <span class="summary-card-arrow">→</span>
+      </div>
+      <div class="summary-card-num" id="dash-min">—</div>
+      <div class="summary-card-lbl">Ministérios</div>
+    </div>
+    <div class="summary-card" onclick="showPage('supervisores',document.querySelector('.tab:nth-child(3)'))">
+      <div class="summary-card-header">
+        <div class="summary-card-icon" style="background:#EFF6FF">👤</div>
+        <span class="summary-card-arrow">→</span>
+      </div>
+      <div class="summary-card-num" id="dash-sup">—</div>
+      <div class="summary-card-lbl">Supervisores Ativos</div>
+    </div>
+    <div class="summary-card" onclick="showPage('membros',document.querySelector('.tab:nth-child(4)'))">
+      <div class="summary-card-header">
+        <div class="summary-card-icon" style="background:#FFF7ED">👥</div>
+        <span class="summary-card-arrow">→</span>
+      </div>
+      <div class="summary-card-num" id="dash-mem">—</div>
+      <div class="summary-card-lbl">Voluntários</div>
+    </div>
+    <div class="summary-card" onclick="showPage('escalas',document.querySelector('.tab:nth-child(5)'))">
+      <div class="summary-card-header">
+        <div class="summary-card-icon" style="background:#F5F3FF">📋</div>
+        <span class="summary-card-arrow">→</span>
+      </div>
+      <div class="summary-card-num" id="dash-esc">—</div>
+      <div class="summary-card-lbl">Escalas esta semana</div>
     </div>
   </div>
-  <div id="sup-grid-container"></div>
-  <div id="sup-lista-container" style="display:none">
+
+  <div class="col-6-4">
+    <!-- Últimas escalas -->
     <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Supervisor</th><th>Ministério</th><th>Membros</th><th>Contato</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="tbody-supervisores"></tbody>
-        </table>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:14px;font-weight:700">⚡ Próximas Escalas</span>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="showPage('escalas',document.querySelector('.tab:nth-child(5)'))">Ver todas →</button>
+      </div>
+      <div id="dash-escalas-list"></div>
+    </div>
+    <!-- Calendário mini + ministérios -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">📅 Calendário</div>
+        <div id="cal-mini"></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:700">⛪ Ministérios</span>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="showPage('ministerios',document.querySelector('.tab:nth-child(2)'))">Ver →</button>
+        </div>
+        <div id="dash-min-list"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MEMBROS -->
+<!-- ────── MINISTÉRIOS ────── -->
+<div class="page" id="page-ministerios">
+  <div class="sec-header">
+    <div><div class="sec-title">Ministérios</div><div class="sec-sub">Clique em um ministério para ver supervisores e voluntários</div></div>
+    <button class="btn btn-primary" onclick="abrirModalMinisterio()">+ Novo Ministério</button>
+  </div>
+  <div class="min-grid" id="grid-ministerios"></div>
+</div>
+
+<!-- ────── SUPERVISORES ────── -->
+<div class="page" id="page-supervisores">
+  <div class="sec-header">
+    <div><div class="sec-title">Supervisores</div><div class="sec-sub">Clique em um supervisor para ver sua equipe</div></div>
+    <button class="btn btn-primary" onclick="openModal('modal-supervisor')">+ Novo Supervisor</button>
+  </div>
+  <div class="filters">
+    <input class="fi" type="text" id="fil-sup-busca" placeholder="🔍 Buscar supervisor…" oninput="debounce(renderSupervisores,300)()">
+    <select class="fi" style="max-width:180px" id="fil-sup-min" onchange="renderSupervisores()"><option value="">Ministério ▾</option></select>
+    <select class="fi" style="max-width:160px" id="fil-sup-status" onchange="renderSupervisores()">
+      <option value="">Status ▾</option><option value="ativo">Ativo</option><option value="pendente">Pendente</option><option value="inativo">Inativo</option>
+    </select>
+    <div class="view-btns">
+      <button class="vbtn on" id="vbtn-sup-cards" onclick="setSupView('cards')">⊞</button>
+      <button class="vbtn"    id="vbtn-sup-lista" onclick="setSupView('lista')">☰</button>
+    </div>
+  </div>
+  <div id="sup-cards-wrap"></div>
+  <div id="sup-lista-wrap" style="display:none">
+    <div class="card"><div class="table-wrap">
+      <table><thead><tr><th>Supervisor</th><th>Ministério</th><th>Membros</th><th>Contato</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-sup"></tbody></table>
+    </div></div>
+  </div>
+</div>
+
+<!-- ────── MEMBROS ────── -->
 <div class="page" id="page-membros">
-  <div class="page-header">
-    <div><div class="page-title">Membros</div><div class="page-subtitle">Voluntários cadastrados</div></div>
+  <div class="sec-header">
+    <div><div class="sec-title">Voluntários</div><div class="sec-sub">Clique em um membro para ver detalhes e escalas</div></div>
     <button class="btn btn-primary" onclick="openModal('modal-membro')">+ Novo Membro</button>
   </div>
   <div class="filters">
-    <input type="text" class="filter-input" placeholder="🔍 Buscar membro..." id="fil-mem-busca" oninput="debounce(carregarMembros,300)()">
-    <select class="filter-select" id="fil-mem-min" onchange="carregarMembros()"><option value="">Ministério ▾</option></select>
+    <input class="fi" type="text" id="fil-mem-busca" placeholder="🔍 Buscar membro…" oninput="debounce(renderMembros,300)()">
+    <select class="fi" style="max-width:180px" id="fil-mem-min" onchange="renderMembros()"><option value="">Ministério ▾</option></select>
   </div>
-  <div class="members-grid" id="grid-membros"><div style="grid-column:1/-1"><div class="loading"><div class="spinner"></div>Carregando…</div></div></div>
+  <div class="cards-grid" id="grid-membros"></div>
 </div>
 
-<!-- CALENDÁRIO -->
-<div class="page" id="page-calendario">
-  <div class="page-header">
-    <div><div class="page-title">Calendário</div><div class="page-subtitle">Eventos por ministério</div></div>
-    <button class="btn btn-primary" onclick="openModal('modal-evento')">📅 Novo Evento</button>
-  </div>
-  <div class="col-7-3">
-    <div class="card">
-      <div class="cal-header">
-        <button class="cal-nav" onclick="navCal(-1)">‹</button>
-        <strong style="font-size:15px" id="cal-mes-titulo">…</strong>
-        <button class="cal-nav" onclick="navCal(1)">›</button>
-      </div>
-      <div id="cal-full"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="card">
-        <div class="card-title">Legenda</div>
-        <div class="legend" id="cal-legenda"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Próximos Eventos</div>
-        <div id="cal-proximos-eventos"><div class="loading"><div class="spinner"></div></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ESCALAS -->
+<!-- ────── ESCALAS ────── -->
 <div class="page" id="page-escalas">
-  <div class="page-header">
-    <div><div class="page-title">Escalas</div><div class="page-subtitle">Gestão de escalas por equipe</div></div>
+  <div class="sec-header">
+    <div><div class="sec-title">Escalas</div><div class="sec-sub">Gestão de escalas por equipe — clique para ver detalhes</div></div>
     <div class="btn-gap">
-      <button class="btn btn-outline" onclick="exportarEscalas()">⬇ Exportar</button>
+      <button class="btn btn-ghost" onclick="exportarEscalas()">⬇ Exportar</button>
       <button class="btn btn-primary" onclick="openModal('modal-escala')">+ Nova Escala</button>
     </div>
   </div>
   <div class="card">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Equipe</th><th>Data</th><th>Horário</th><th>Membro</th><th>Função</th><th>Status</th><th>WhatsApp</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Equipe</th><th>Data</th><th>Horário</th><th>Membro</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tbody-escalas"></tbody>
       </table>
     </div>
-    <div class="pagination" id="pagination-escalas"></div>
+    <div class="pagination" id="pag-escalas"></div>
   </div>
 </div>
 
-<!-- RELATÓRIOS -->
+<!-- ────── CALENDÁRIO ────── -->
+<div class="page" id="page-calendario">
+  <div class="sec-header">
+    <div><div class="sec-title">Calendário</div><div class="sec-sub">Clique em um dia para criar evento</div></div>
+    <button class="btn btn-primary" onclick="openModal('modal-evento')">+ Novo Evento</button>
+  </div>
+  <div class="col-7-3">
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="navCal(-1)">‹</button>
+        <strong style="font-size:15px" id="cal-titulo">…</strong>
+        <button class="cal-nav" onclick="navCal(1)">›</button>
+      </div>
+      <div id="cal-full"></div>
+      <div class="cal-legend" id="cal-legenda"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px">Próximos Eventos</div>
+        <div id="cal-proximos"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────── RELATÓRIOS ────── -->
 <div class="page" id="page-relatorios">
-  <div class="page-header">
-    <div><div class="page-title">Relatórios</div><div class="page-subtitle">Métricas e análise ministerial</div></div>
+  <div class="sec-header">
+    <div><div class="sec-title">Relatórios</div><div class="sec-sub">Métricas e análise ministerial</div></div>
     <div class="btn-gap">
-      <button class="btn btn-outline" onclick="exportarRelatorio()">⬇ Exportar</button>
+      <button class="btn btn-ghost" onclick="exportarRelatorio()">⬇ Exportar</button>
       <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir</button>
     </div>
   </div>
   <div class="rel-tabs">
-    <button class="rel-tab active" id="tab-geral"    onclick="mudarAba('geral')">📊 Geral</button>
-    <button class="rel-tab" id="tab-presenca"        onclick="mudarAba('presenca')">✅ Presença e Faltas</button>
-    <button class="rel-tab" id="tab-equipes"         onclick="mudarAba('equipes')">⛪ Por Equipe</button>
-    <button class="rel-tab" id="tab-membros"         onclick="mudarAba('membros')">👤 Por Membro</button>
+    <button class="rel-tab on"  id="rtab-geral"    onclick="mudarAba('geral')">📊 Geral</button>
+    <button class="rel-tab"     id="rtab-presenca"  onclick="mudarAba('presenca')">✅ Presença</button>
+    <button class="rel-tab"     id="rtab-equipes"   onclick="mudarAba('equipes')">⛪ Por Equipe</button>
+    <button class="rel-tab"     id="rtab-membros"   onclick="mudarAba('membros')">👤 Por Membro</button>
   </div>
 
-  <div class="rel-panel active" id="panel-geral">
-    <div class="reports-kpi">
-      <div class="report-kpi">
-        <div class="report-kpi-label">Voluntários Ativos</div>
-        <div class="report-kpi-value" id="rel-voluntarios">—</div>
-        <div class="report-kpi-bar" style="background:linear-gradient(to right,#CCFBF1,#0D9488)"></div>
-      </div>
-      <div class="report-kpi">
-        <div class="report-kpi-label">Escalas Geradas</div>
-        <div class="report-kpi-value" id="rel-escalas-total">—</div>
-        <div class="report-kpi-bar" style="background:linear-gradient(to right,#FED7AA,#F97316)"></div>
-      </div>
-      <div class="report-kpi">
-        <div class="report-kpi-label">Taxa de Presença Geral</div>
-        <div class="report-kpi-value" style="color:var(--green)" id="rel-taxa-geral">—</div>
-        <div class="report-kpi-bar" style="background:linear-gradient(to right,#D1FAE5,#16A34A)"></div>
-      </div>
+  <div class="rel-panel on" id="rpanel-geral">
+    <div class="rel-kpi-grid">
+      <div class="rel-kpi"><div class="rel-kpi-lbl">Voluntários Ativos</div><div class="rel-kpi-val" id="rel-vol">—</div><div class="rel-kpi-bar" style="background:linear-gradient(to right,var(--teal-ll),var(--teal))"></div></div>
+      <div class="rel-kpi"><div class="rel-kpi-lbl">Escalas Geradas</div><div class="rel-kpi-val" id="rel-esc">—</div><div class="rel-kpi-bar" style="background:linear-gradient(to right,#FED7AA,var(--orange))"></div></div>
+      <div class="rel-kpi"><div class="rel-kpi-lbl">Taxa de Presença Geral</div><div class="rel-kpi-val" style="color:var(--green)" id="rel-taxa">—</div><div class="rel-kpi-bar" style="background:linear-gradient(to right,var(--green-l),var(--green))"></div></div>
     </div>
     <div class="two-col">
-      <div class="card">
-        <div class="card-title">📊 Desempenho por Equipe</div>
+      <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:14px">Desempenho por Equipe</div>
         <div class="bar-chart" id="chart-equipes"></div>
         <div class="bar-labels" id="chart-labels"></div>
-        <div style="display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:10px">
-          <span><span style="display:inline-block;width:9px;height:9px;background:#0D9488;border-radius:2px;margin-right:3px"></span>Presença</span>
-          <span><span style="display:inline-block;width:9px;height:9px;background:#EF4444;border-radius:2px;margin-right:3px"></span>Falta</span>
-          <span><span style="display:inline-block;width:9px;height:9px;background:#EAB308;border-radius:2px;margin-right:3px"></span>Pendente</span>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:10px">
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--teal);border-radius:2px;margin-right:3px"></span>Confirmado</span>
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:2px;margin-right:3px"></span>Falta</span>
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--yellow);border-radius:2px;margin-right:3px"></span>Pendente</span>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">📈 Escalas por Mês</div>
-        <svg id="chart-freq" viewBox="0 0 300 120" style="width:100%;height:130px"></svg>
+      <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:14px">Escalas por Mês</div>
+        <svg id="chart-freq" viewBox="0 0 300 110" style="width:100%;height:120px"></svg>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px">
           <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span><span>Dez</span>
         </div>
@@ -536,1421 +242,185 @@ tbody td{padding:12px 14px}
     </div>
   </div>
 
-  <div class="rel-panel" id="panel-presenca">
-    <div class="presenca-grid">
-      <div class="presenca-card" style="--pc:var(--teal)">
-        <div class="presenca-num" id="pc-total">—</div>
-        <div class="presenca-label">Total Escalas</div>
-        <div class="presenca-pct" style="color:var(--muted)">Base</div>
-      </div>
-      <div class="presenca-card" style="--pc:var(--green)">
-        <div class="presenca-num" id="pc-confirmados">—</div>
-        <div class="presenca-label">✅ Confirmados</div>
-        <div class="presenca-pct" style="color:var(--green)" id="pc-conf-pct">—</div>
-      </div>
-      <div class="presenca-card" style="--pc:var(--yellow)">
-        <div class="presenca-num" id="pc-pendentes">—</div>
-        <div class="presenca-label">⏳ Pendentes</div>
-        <div class="presenca-pct" style="color:var(--yellow)" id="pc-pend-pct">—</div>
-      </div>
-      <div class="presenca-card" style="--pc:#EF4444">
-        <div class="presenca-num" id="pc-ausentes">—</div>
-        <div class="presenca-label">❌ Ausentes</div>
-        <div class="presenca-pct" style="color:#EF4444" id="pc-aus-pct">—</div>
-      </div>
+  <div class="rel-panel" id="rpanel-presenca">
+    <div class="presenca-kpi">
+      <div class="p-kpi" style="--pc:var(--teal)"><div class="p-kpi-num" id="pc-total">—</div><div class="p-kpi-lbl">Total</div><div class="p-kpi-pct" style="color:var(--muted)">Base</div></div>
+      <div class="p-kpi" style="--pc:var(--green)"><div class="p-kpi-num" id="pc-conf">—</div><div class="p-kpi-lbl">✅ Confirmados</div><div class="p-kpi-pct" style="color:var(--green)" id="pc-conf-pct">—</div></div>
+      <div class="p-kpi" style="--pc:var(--yellow)"><div class="p-kpi-num" id="pc-pend">—</div><div class="p-kpi-lbl">⏳ Pendentes</div><div class="p-kpi-pct" style="color:var(--yellow)" id="pc-pend-pct">—</div></div>
+      <div class="p-kpi" style="--pc:var(--red)"><div class="p-kpi-num" id="pc-aus">—</div><div class="p-kpi-lbl">❌ Ausentes</div><div class="p-kpi-pct" style="color:var(--red)" id="pc-aus-pct">—</div></div>
     </div>
-    <div class="card">
-      <div class="card-title">Presença e Faltas por Ministério</div>
-      <div class="presenca-table-wrap">
-        <table class="presenca-table">
-          <thead><tr><th>Ministério</th><th>Total</th><th>✅ Conf.</th><th>⏳ Pend.</th><th>❌ Falt.</th><th>Taxa</th></tr></thead>
-          <tbody id="tbody-presenca"></tbody>
-        </table>
-      </div>
+    <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Presença por Ministério</div>
+      <div style="overflow-x:auto"><table class="presenca-table">
+        <thead><tr><th>Ministério</th><th>Total</th><th>✅ Conf.</th><th>⏳ Pend.</th><th>❌ Falt.</th><th>Taxa</th></tr></thead>
+        <tbody id="tbody-presenca"></tbody>
+      </table></div>
     </div>
   </div>
 
-  <div class="rel-panel" id="panel-equipes">
-    <div class="card">
-      <div class="card-title">Resumo por Ministério</div>
-      <div class="presenca-table-wrap">
-        <table class="presenca-table">
-          <thead><tr><th>Ministério</th><th>Supervisores</th><th>Membros</th><th>Escalas</th><th>Taxa Presença</th></tr></thead>
-          <tbody id="tbody-equipes-rel"></tbody>
-        </table>
-      </div>
+  <div class="rel-panel" id="rpanel-equipes">
+    <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Resumo por Ministério</div>
+      <div style="overflow-x:auto"><table class="presenca-table">
+        <thead><tr><th>Ministério</th><th>Supervisores</th><th>Membros</th><th>Escalas</th><th>Taxa Presença</th></tr></thead>
+        <tbody id="tbody-equipes-rel"></tbody>
+      </table></div>
     </div>
   </div>
 
-  <div class="rel-panel" id="panel-membros">
+  <div class="rel-panel" id="rpanel-membros">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div class="card-title" style="margin-bottom:0">Participação Individual</div>
-        <input type="text" class="filter-input" placeholder="🔍 Buscar…" id="fil-rel-membro" oninput="debounce(renderRelMembros,300)()" style="max-width:220px">
+        <span style="font-size:13px;font-weight:700">Participação Individual</span>
+        <input class="fi" type="text" placeholder="🔍 Buscar…" id="fil-rel-mem" oninput="debounce(renderRelMembros,300)()" style="max-width:200px">
       </div>
-      <div class="presenca-table-wrap">
-        <table class="presenca-table">
-          <thead><tr><th>Membro</th><th>Ministério</th><th>Escalas</th><th>✅ Pres.</th><th>❌ Falt.</th><th>Taxa</th></tr></thead>
-          <tbody id="tbody-membros-rel"></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto"><table class="presenca-table">
+        <thead><tr><th>Membro</th><th>Ministério</th><th>Escalas</th><th>✅ Pres.</th><th>❌ Falt.</th><th>Taxa</th></tr></thead>
+        <tbody id="tbody-membros-rel"></tbody>
+      </table></div>
     </div>
   </div>
 </div>
 
 </main>
 
-<!-- MODAL SUPERVISOR -->
+<!-- ══════════════ MODAIS ══════════════ -->
+
+<!-- Supervisor -->
 <div class="modal-overlay" id="modal-supervisor">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-supervisor-titulo">Novo Supervisor</div>
-      <button class="modal-close" onclick="closeModal('modal-supervisor')">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="modal-sup-titulo">Novo Supervisor</div><button class="modal-close" onclick="closeModal('modal-supervisor')">✕</button></div>
     <input type="hidden" id="sup-id">
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Nome *</label>
-        <input type="text" class="form-input" id="sup-nome" placeholder="Nome completo">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Telefone</label>
-        <input type="text" class="form-input" id="sup-telefone" placeholder="(14) 99999-9999">
-      </div>
+      <div class="fg"><label>Nome *</label><input type="text" class="fi-modal" id="sup-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>Telefone</label><input type="text" class="fi-modal" id="sup-telefone" placeholder="(14) 99999-9999"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">E-mail *</label>
-      <input type="email" class="form-input" id="sup-email" placeholder="email@exemplo.com">
-    </div>
+    <div class="fg"><label>E-mail *</label><input type="email" class="fi-modal" id="sup-email" placeholder="email@exemplo.com"></div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Ministério</label>
-        <select class="form-select" id="sup-ministerio"><option value="">Selecione…</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="sup-status">
-          <option value="ativo">Ativo</option>
-          <option value="pendente">Pendente</option>
-          <option value="inativo">Inativo</option>
-        </select>
-      </div>
+      <div class="fg"><label>Ministério</label><select class="fi-modal" id="sup-ministerio"><option value="">Selecione…</option></select></div>
+      <div class="fg"><label>Status</label><select class="fi-modal" id="sup-status"><option value="ativo">Ativo</option><option value="pendente">Pendente</option><option value="inativo">Inativo</option></select></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-supervisor')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-supervisor')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarSupervisor()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL MEMBRO -->
+<!-- Membro -->
 <div class="modal-overlay" id="modal-membro">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-membro-titulo">Novo Membro</div>
-      <button class="modal-close" onclick="closeModal('modal-membro')">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="modal-mem-titulo">Novo Membro</div><button class="modal-close" onclick="closeModal('modal-membro')">✕</button></div>
     <input type="hidden" id="mem-id">
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Nome *</label>
-        <input type="text" class="form-input" id="mem-nome" placeholder="Nome completo">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Telefone</label>
-        <input type="text" class="form-input" id="mem-telefone" placeholder="(14) 99999-9999">
-      </div>
+      <div class="fg"><label>Nome *</label><input type="text" class="fi-modal" id="mem-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>Telefone</label><input type="text" class="fi-modal" id="mem-telefone" placeholder="(14) 99999-9999"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">E-mail</label>
-      <input type="email" class="form-input" id="mem-email" placeholder="email@exemplo.com">
-    </div>
+    <div class="fg"><label>E-mail</label><input type="email" class="fi-modal" id="mem-email" placeholder="email@exemplo.com"></div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Ministério</label>
-        <select class="form-select" id="mem-ministerio" onchange="atualizarSelectSupervisores()"><option value="">Selecione…</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Supervisor</label>
-        <select class="form-select" id="mem-supervisor"><option value="">Selecione…</option></select>
-      </div>
+      <div class="fg"><label>Ministério</label><select class="fi-modal" id="mem-ministerio" onchange="atualizarSelectSups()"><option value="">Selecione…</option></select></div>
+      <div class="fg"><label>Supervisor</label><select class="fi-modal" id="mem-supervisor"><option value="">Selecione…</option></select></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Função</label>
-      <input type="text" class="form-input" id="mem-funcao" placeholder="Ex: Violão, Câmera, Professora…">
-    </div>
+    <div class="fg"><label>Função</label><input type="text" class="fi-modal" id="mem-funcao" placeholder="Ex: Violão, Câmera…"></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-membro')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-membro')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarMembro()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL ESCALA -->
+<!-- Escala -->
 <div class="modal-overlay" id="modal-escala">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-escala-titulo">Nova Escala</div>
-      <button class="modal-close" onclick="closeModal('modal-escala')">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="modal-esc-titulo">Nova Escala</div><button class="modal-close" onclick="closeModal('modal-escala')">✕</button></div>
     <input type="hidden" id="esc-id">
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Data *</label>
-        <input type="date" class="form-input" id="esc-data">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Horário *</label>
-        <input type="time" class="form-input" id="esc-horario">
-      </div>
+      <div class="fg"><label>Data *</label><input type="date" class="fi-modal" id="esc-data"></div>
+      <div class="fg"><label>Horário *</label><input type="time" class="fi-modal" id="esc-horario"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Ministério</label>
-        <select class="form-select" id="esc-ministerio" onchange="atualizarSelectMembrosPorMin()"><option value="">Selecione…</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Função</label>
-        <input type="text" class="form-input" id="esc-funcao" placeholder="Ex: Violão, Som…">
-      </div>
+      <div class="fg"><label>Ministério</label><select class="fi-modal" id="esc-ministerio" onchange="atualizarSelectMembros()"><option value="">Selecione…</option></select></div>
+      <div class="fg"><label>Função</label><input type="text" class="fi-modal" id="esc-funcao" placeholder="Ex: Violão, Som…"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Membro</label>
-        <select class="form-select" id="esc-membro"><option value="">Selecione…</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="esc-status">
-          <option value="pendente">Pendente</option>
-          <option value="confirmado">Confirmado</option>
-          <option value="ausente">Ausente</option>
-        </select>
-      </div>
+      <div class="fg"><label>Membro</label><select class="fi-modal" id="esc-membro"><option value="">Selecione…</option></select></div>
+      <div class="fg"><label>Status</label><select class="fi-modal" id="esc-status"><option value="pendente">Pendente</option><option value="confirmado">Confirmado</option><option value="ausente">Ausente</option></select></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Observações</label>
-      <textarea class="form-textarea" id="esc-obs" placeholder="Observações opcionais…"></textarea>
-    </div>
+    <div class="fg"><label>Observações</label><textarea class="fi-modal" id="esc-obs" placeholder="Observações opcionais…"></textarea></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-escala')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-escala')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarEscala()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL EVENTO -->
+<!-- Evento -->
 <div class="modal-overlay" id="modal-evento">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-evento-titulo">Novo Evento</div>
-      <button class="modal-close" onclick="closeModal('modal-evento')">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="modal-evt-titulo">Novo Evento</div><button class="modal-close" onclick="closeModal('modal-evento')">✕</button></div>
     <input type="hidden" id="evt-id">
-    <div class="form-group">
-      <label class="form-label">Título *</label>
-      <input type="text" class="form-input" id="evt-titulo" placeholder="Ex: Culto de Louvor">
-    </div>
+    <div class="fg"><label>Título *</label><input type="text" class="fi-modal" id="evt-titulo" placeholder="Ex: Culto de Louvor"></div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Data *</label>
-        <input type="date" class="form-input" id="evt-data">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Horário *</label>
-        <input type="time" class="form-input" id="evt-horario">
-      </div>
+      <div class="fg"><label>Data *</label><input type="date" class="fi-modal" id="evt-data"></div>
+      <div class="fg"><label>Horário *</label><input type="time" class="fi-modal" id="evt-horario"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Tipo</label>
-      <select class="form-select" id="evt-tipo">
-        <option value="culto">Culto</option>
-        <option value="louvor">Louvor</option>
-        <option value="kids">Kids</option>
-        <option value="reuniao">Reunião</option>
-        <option value="escala_especial">Escala Especial</option>
-        <option value="cultural">Cultural</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Ministérios participantes</label>
-      <div class="min-checkboxes" id="evt-ministerios-checks"></div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Descrição</label>
-      <textarea class="form-textarea" id="evt-desc" placeholder="Detalhes do evento…"></textarea>
-    </div>
+    <div class="fg"><label>Tipo</label><select class="fi-modal" id="evt-tipo"><option value="culto">Culto</option><option value="louvor">Louvor</option><option value="kids">Kids</option><option value="reuniao">Reunião</option><option value="escala_especial">Escala Especial</option><option value="cultural">Cultural</option></select></div>
+    <div class="fg"><label>Ministérios participantes</label><div class="min-cbs" id="evt-min-checks"></div></div>
+    <div class="fg"><label>Descrição</label><textarea class="fi-modal" id="evt-desc" placeholder="Detalhes…"></textarea></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-evento')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-evento')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarEvento()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL MINISTÉRIO -->
+<!-- Ministério -->
 <div class="modal-overlay" id="modal-ministerio">
   <div class="modal" style="max-width:400px">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-ministerio-titulo">Novo Ministério</div>
-      <button class="modal-close" onclick="closeModal('modal-ministerio')">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="modal-min-titulo">Novo Ministério</div><button class="modal-close" onclick="closeModal('modal-ministerio')">✕</button></div>
     <input type="hidden" id="min-id">
-    <div class="form-group">
-      <label class="form-label">Nome *</label>
-      <input type="text" class="form-input" id="min-nome" placeholder="Ex: Louvor, Mídia, Kids…">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Ícone</label>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:3px" id="min-icones"></div>
-      <input type="hidden" id="min-icone" value="⛪">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Cor</label>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:3px" id="min-cores"></div>
-      <input type="hidden" id="min-cor" value="#0D9488">
-    </div>
+    <div class="fg"><label>Nome *</label><input type="text" class="fi-modal" id="min-nome" placeholder="Ex: Louvor, Mídia…"></div>
+    <div class="fg"><label>Ícone</label><div class="paleta" id="min-icones"></div><input type="hidden" id="min-icone" value="⛪"></div>
+    <div class="fg"><label>Cor</label><div class="paleta" id="min-cores"></div><input type="hidden" id="min-cor" value="#0D9488"></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-ministerio')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ministerio')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarMinisterio()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- CONFIRM -->
+<!-- ══════════════ DRAWER (detalhes) ══════════════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-badge" id="drw-badge">⛪</div>
+    <div>
+      <div class="drawer-title" id="drw-title">—</div>
+      <div class="drawer-sub"   id="drw-sub">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drw-body"></div>
+  <div class="drawer-footer" id="drw-footer"></div>
+</div>
+
+<!-- ══════════════ CONFIRM ══════════════ -->
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-box">
     <div class="confirm-icon">⚠️</div>
     <div class="confirm-title" id="confirm-title">Confirmar</div>
-    <div class="confirm-msg" id="confirm-msg">Tem certeza?</div>
+    <div class="confirm-msg"   id="confirm-msg">Tem certeza?</div>
     <div class="confirm-btns">
-      <button class="btn btn-outline" onclick="closeConfirm()">Cancelar</button>
-      <button class="btn btn-danger" id="confirm-ok">Confirmar</button>
+      <button class="btn btn-ghost"   onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger"  id="confirm-ok">Confirmar</button>
     </div>
   </div>
 </div>
 
-<div class="toast-container" id="toasts"></div>
-
-<script>
-/* ================================================================
-   CONFIGURAÇÃO N8N — substitua pela URL real do seu workflow
-   ================================================================ */
-const N8N_ENVIAR_URL = 'https://SEU-SUBDOMINIO.app.n8n.cloud/webhook/enviar-confirmacao';
-
-/* ================================================================
-   BANCO DE DADOS EM MEMÓRIA — campos alinhados com MySQL e reports
-   ================================================================ */
-const DB = {
-  ministerios: [
-    {id:1, nome:'Louvor',   cor_hex:'#0D9488', icone:'🎵'},
-    {id:2, nome:'Mídia',    cor_hex:'#F97316', icone:'📷'},
-    {id:3, nome:'Kids',     cor_hex:'#EAB308', icone:'🧒'},
-    {id:4, nome:'Recepção', cor_hex:'#16A34A', icone:'🤝'},
-    {id:5, nome:'Oração',   cor_hex:'#7C3AED', icone:'🙏'},
-  ],
-  supervisores: [
-    {id:1, nome:'Ana Souza',      email:'ana.souza@email.com',   telefone:'(14) 99123-4567', ministerio_id:1, status:'ativo',    avatar_iniciais:'AS', avatar_cor:'#0D9488'},
-    {id:2, nome:'Carlos Lima',    email:'carlos.lima@email.com', telefone:'(14) 98765-4321', ministerio_id:1, status:'ativo',    avatar_iniciais:'CL', avatar_cor:'#F97316'},
-    {id:3, nome:'Maria Oliveira', email:'maria.o@email.com',     telefone:'(14) 97654-3210', ministerio_id:2, status:'pendente', avatar_iniciais:'MO', avatar_cor:'#7C3AED'},
-    {id:4, nome:'Paulo Ferreira', email:'paulo.f@email.com',     telefone:'(14) 96543-2109', ministerio_id:2, status:'ativo',    avatar_iniciais:'PF', avatar_cor:'#16A34A'},
-    {id:5, nome:'Lúcia Mendes',   email:'lucia.m@email.com',     telefone:'(14) 95432-1098', ministerio_id:3, status:'pendente', avatar_iniciais:'LM', avatar_cor:'#EAB308'},
-    {id:6, nome:'Marcos Dias',    email:'marcos.d@email.com',    telefone:'(14) 94321-0987', ministerio_id:4, status:'ativo',    avatar_iniciais:'MD', avatar_cor:'#EC4899'},
-  ],
-  membros: [
-    // supervisor_id + ministerio_id presentes — relatório por membro funciona
-    {id:1, nome:'Ana Beatriz Costa',    email:'ana.b@email.com',      ministerio_id:1, supervisor_id:1, funcao:'Violão',        habilidades:['Violão'],        disponibilidades:['Dom. Manhã','Dom. Noite'], avatar_iniciais:'A', avatar_cor:'#0D9488'},
-    {id:2, nome:'Carlos Eduardo Melo',  email:'c.melo@email.com',     ministerio_id:2, supervisor_id:4, funcao:'Câmera',        habilidades:['Câmera'],        disponibilidades:['Qua. Noite','Dom. Manhã'], avatar_iniciais:'C', avatar_cor:'#F97316'},
-    {id:3, nome:'Fernanda Lima Rocha',  email:'fernanda.r@email.com', ministerio_id:3, supervisor_id:5, funcao:'Professora',    habilidades:['Professora'],    disponibilidades:['Dom. Manhã'],              avatar_iniciais:'F', avatar_cor:'#7C3AED'},
-    {id:4, nome:'Roberto Santos Jr.',   email:'roberto.s@email.com',  ministerio_id:4, supervisor_id:6, funcao:'Recepcionista', habilidades:['Recepcionista'], disponibilidades:['Qua. Noite','Dom. Noite'], avatar_iniciais:'R', avatar_cor:'#16A34A'},
-    {id:5, nome:'Juliana Pereira Silva',email:'juliana.s@email.com',  ministerio_id:1, supervisor_id:1, funcao:'Vocal',         habilidades:['Vocal'],         disponibilidades:['Dom. Manhã','Dom. Noite'], avatar_iniciais:'J', avatar_cor:'#EAB308'},
-    {id:6, nome:'Marcos Rodrigues',     email:'marcos.r@email.com',   ministerio_id:2, supervisor_id:4, funcao:'Designer',      habilidades:['Designer'],      disponibilidades:['Qua. Noite'],              avatar_iniciais:'M', avatar_cor:'#EC4899'},
-  ],
-  escalas: [
-    // TODOS os campos: ministerio_id (int) + membro_id (int) — relatórios funcionam
-    {id:1,  ministerio_id:1, ministerio:'Louvor',   membro_id:1, membro_nome:'Ana Beatriz Costa',    funcao:'Violão',        data_escala:'2025-04-06', horario:'09:00', status:'confirmado', observacoes:''},
-    {id:2,  ministerio_id:1, ministerio:'Louvor',   membro_id:5, membro_nome:'Juliana Pereira Silva',funcao:'Teclado',       data_escala:'2025-04-06', horario:'19:30', status:'confirmado', observacoes:''},
-    {id:3,  ministerio_id:2, ministerio:'Mídia',    membro_id:2, membro_nome:'Carlos Eduardo Melo',  funcao:'Câmera 1',      data_escala:'2025-04-09', horario:'19:30', status:'pendente',   observacoes:''},
-    {id:4,  ministerio_id:3, ministerio:'Kids',     membro_id:3, membro_nome:'Fernanda Lima Rocha',  funcao:'Professora',    data_escala:'2025-04-13', horario:'09:00', status:'confirmado', observacoes:''},
-    {id:5,  ministerio_id:4, ministerio:'Recepção', membro_id:4, membro_nome:'Roberto Santos Jr.',   funcao:'Recepção',      data_escala:'2025-04-13', horario:'08:30', status:'pendente',   observacoes:''},
-    {id:6,  ministerio_id:2, ministerio:'Mídia',    membro_id:2, membro_nome:'Carlos Eduardo Melo',  funcao:'Som',           data_escala:'2025-04-16', horario:'19:30', status:'ausente',    observacoes:'Imprevisto'},
-    {id:7,  ministerio_id:1, ministerio:'Louvor',   membro_id:5, membro_nome:'Juliana Pereira Silva',funcao:'Vocal',         data_escala:'2025-04-20', horario:'09:00', status:'confirmado', observacoes:''},
-    {id:8,  ministerio_id:3, ministerio:'Kids',     membro_id:3, membro_nome:'Fernanda Lima Rocha',  funcao:'Auxiliar',      data_escala:'2025-04-20', horario:'09:00', status:'pendente',   observacoes:''},
-    {id:9,  ministerio_id:1, ministerio:'Louvor',   membro_id:1, membro_nome:'Ana Beatriz Costa',    funcao:'Violão',        data_escala:'2025-04-23', horario:'09:00', status:'ausente',    observacoes:'Viagem'},
-    {id:10, ministerio_id:2, ministerio:'Mídia',    membro_id:6, membro_nome:'Marcos Rodrigues',     funcao:'Designer',      data_escala:'2025-04-23', horario:'19:30', status:'confirmado', observacoes:''},
-  ],
-  eventos: [
-    {id:1,  titulo:'Culto de Louvor',   data_evento:'2025-04-06', horario:'09:00', ministerios_ids:[1,2], tipo:'louvor'},
-    {id:2,  titulo:'Culto de Quarta',   data_evento:'2025-04-09', horario:'19:30', ministerios_ids:[1,2,4], tipo:'culto'},
-    {id:3,  titulo:'Escala Especial',   data_evento:'2025-04-13', horario:'09:00', ministerios_ids:[1,2,3,4], tipo:'escala_especial'},
-    {id:4,  titulo:'Ministério Kids',   data_evento:'2025-04-13', horario:'09:00', ministerios_ids:[3], tipo:'kids'},
-    {id:5,  titulo:'Culto de Louvor',   data_evento:'2025-04-20', horario:'09:00', ministerios_ids:[1,2], tipo:'louvor'},
-    {id:6,  titulo:'Culto de Quarta',   data_evento:'2025-04-23', horario:'19:30', ministerios_ids:[1,2], tipo:'culto'},
-    {id:7,  titulo:'Reunião de Equipe', data_evento:'2025-04-27', horario:'19:00', ministerios_ids:[1,2,3,4,5], tipo:'reuniao'},
-    {id:8,  titulo:'Culto de Louvor',   data_evento:'2025-05-04', horario:'09:00', ministerios_ids:[1,2], tipo:'louvor'},
-    {id:9,  titulo:'Ministério Kids',   data_evento:'2025-05-11', horario:'09:00', ministerios_ids:[3], tipo:'kids'},
-    {id:10, titulo:'Culto de Quarta',   data_evento:'2025-05-14', horario:'19:30', ministerios_ids:[1,2,4], tipo:'culto'},
-  ],
-  nextId: {sup:7, mem:7, esc:11, evt:11, min:6}
-};
-
-/* ================================================================
-   HELPERS DE MINISTÉRIO — dinâmicos (não hardcoded por ID)
-   ================================================================ */
-function minById(id) { return DB.ministerios.find(m=>m.id==id); }
-function minCor(id)  { return minById(id)?.cor_hex || '#64748B'; }
-function minBg(id)   { const c=minCor(id); return c+'22'; }
-function minIcon(id) { return minById(id)?.icone || '⛪'; }
-
-// Cor de fundo mais suave para cards (usando transparência)
-function minBgCard(id) {
-  const c = minCor(id);
-  // Converte hex para r,g,b e aplica fundo pastel
-  const r=parseInt(c.slice(1,3),16), g=parseInt(c.slice(3,5),16), b=parseInt(c.slice(5,7),16);
-  return `rgba(${r},${g},${b},0.10)`;
-}
-
-// Cor dinâmica para novos ministérios
-const PALETA = ['#0D9488','#F97316','#EAB308','#16A34A','#7C3AED','#EC4899','#3B82F6','#EF4444','#14B8A6','#F59E0B'];
-const ICONES = ['🎵','📷','🧒','🤝','🙏','🎤','🎸','📢','✝️','⛪','🕊️','📖','🎺','🥁','🎹'];
-
-/* ================================================================
-   UTILIDADES
-   ================================================================ */
-let calState = {mes: new Date().getMonth(), ano: new Date().getFullYear()};
-let escalasPage = 1;
-let abaAtiva = 'geral';
-let supViewMode = 'cards';
-let minPainelAtivo = null;
-let confirmCallback = null;
-
-function showToast(msg, tipo='success') {
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = `toast ${tipo}`;
-  t.innerHTML = `<span>${{success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'}[tipo]||'ℹ️'}</span> ${msg}`;
-  c.appendChild(t);
-  setTimeout(()=>t.remove(), 3500);
-}
-
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('open');
-  preencherSelectMinisterios();
-  if (id === 'modal-evento') preencherCheckboxMinisterios();
-  if (id === 'modal-ministerio') preencherPaleta();
-}
-
-function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
-
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
-});
-
-function showConfirm(titulo, msg, cb) {
-  document.getElementById('confirm-title').textContent = titulo;
-  document.getElementById('confirm-msg').textContent   = msg;
-  document.getElementById('confirm-overlay').classList.add('open');
-  confirmCallback = cb;
-}
-function closeConfirm() {
-  document.getElementById('confirm-overlay').classList.remove('open');
-  confirmCallback = null;
-}
-document.getElementById('confirm-ok').onclick = () => { if(confirmCallback) confirmCallback(); closeConfirm(); };
-
-function debounce(fn, ms) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
-function fmtData(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
-function fmtHora(h) { return h ? h.substring(0,5) : '—'; }
-function badgeStatus(s) {
-  const m={confirmado:'badge-green',pendente:'badge-yellow',inativo:'badge-red',ausente:'badge-red',ativo:'badge-green'};
-  const l={confirmado:'Confirmado',pendente:'Pendente',inativo:'Inativo',ausente:'Ausente',ativo:'Ativo'};
-  return `<span class="badge ${m[s]||'badge-blue'}">${l[s]||s}</span>`;
-}
-function pct(n, total) { return total ? Math.round((n/total)*100) : 0; }
-function corTaxa(t) { return t>=75?'#16A34A':t>=50?'#EAB308':'#EF4444'; }
-
-/* ================================================================
-   NAVEGAÇÃO
-   ================================================================ */
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  btn.classList.add('active');
-  ({
-    dashboard:   ()=>{ carregarDashboard(); renderCalendario('cal-dash',true); },
-    supervisores: carregarSupervisores,
-    membros:     carregarMembros,
-    calendario:  ()=>{ renderCalendario('cal-full',false); carregarProximosEventos(); renderLegenda(); },
-    escalas:     ()=>carregarEscalas(1),
-    relatorios:  carregarRelatorios,
-  })[id]?.();
-}
-
-/* ================================================================
-   SELECT HELPERS
-   ================================================================ */
-function preencherSelectMinisterios() {
-  ['sup-ministerio','mem-ministerio','esc-ministerio','fil-sup-min','fil-mem-min'].forEach(sid => {
-    const el = document.getElementById(sid);
-    if (!el) return;
-    const val = el.value;
-    const isFil = sid.startsWith('fil-');
-    el.innerHTML = `<option value="">${isFil ? 'Ministério ▾' : 'Selecione…'}</option>`;
-    DB.ministerios.forEach(m => {
-      const o = document.createElement('option');
-      o.value = m.id; o.textContent = `${m.icone||''} ${m.nome}`;
-      el.appendChild(o);
-    });
-    el.value = val;
-  });
-}
-
-function preencherCheckboxMinisterios() {
-  const box = document.getElementById('evt-ministerios-checks');
-  if (!box) return;
-  box.innerHTML = DB.ministerios.map(m => `
-    <label class="min-checkbox-item">
-      <input type="checkbox" name="evt-min" value="${m.id}">
-      <span class="min-checkbox-dot" style="background:${m.cor_hex}"></span>
-      <span class="min-checkbox-label">${m.icone||''} ${m.nome}</span>
-    </label>`).join('');
-}
-
-function atualizarSelectSupervisores() {
-  const minId = document.getElementById('mem-ministerio')?.value;
-  const sel = document.getElementById('mem-supervisor');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Selecione…</option>';
-  DB.supervisores
-    .filter(s => !minId || s.ministerio_id == minId)
-    .forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id; o.textContent = s.nome;
-      sel.appendChild(o);
-    });
-}
-
-function atualizarSelectMembrosPorMin() {
-  const minId = document.getElementById('esc-ministerio')?.value;
-  const sel = document.getElementById('esc-membro');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Selecione…</option>';
-  DB.membros
-    .filter(m => !minId || m.ministerio_id == minId)
-    .forEach(m => {
-      const o = document.createElement('option');
-      o.value = m.id; o.textContent = m.nome;
-      sel.appendChild(o);
-    });
-}
-
-/* ================================================================
-   MINISTÉRIOS — SIDEBAR + PAINEL
-   ================================================================ */
-function renderSidebarMinisterios() {
-  const lista = document.getElementById('sidebar-min-list');
-  if (!lista) return;
-  lista.innerHTML = DB.ministerios.map(m => {
-    const nSup = DB.supervisores.filter(s=>s.ministerio_id==m.id).length;
-    const nMem = DB.membros.filter(x=>x.ministerio_id==m.id).length;
-    return `
-    <div class="sidebar-min-item${minPainelAtivo===m.id?' selected':''}" onclick="abrirPainelMinisterio(${m.id})">
-      <span class="sidebar-min-dot" style="background:${m.cor_hex}"></span>
-      <span class="sidebar-min-nome">${m.icone||'⛪'} ${m.nome}</span>
-      <span class="sidebar-min-count">${nSup+nMem}</span>
-      <button class="sidebar-min-del" onclick="event.stopPropagation();excluirMinisterio(${m.id})">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function abrirPainelMinisterio(id) {
-  const m = DB.ministerios.find(x=>x.id===id);
-  if (!m) return;
-  minPainelAtivo = id;
-
-  document.getElementById('mdp-badge').textContent = m.icone||'⛪';
-  document.getElementById('mdp-badge').style.background = m.cor_hex+'22';
-  document.getElementById('mdp-nome').textContent = m.nome;
-
-  const sups = DB.supervisores.filter(s=>s.ministerio_id==id);
-  const mems = DB.membros.filter(x=>x.ministerio_id==id);
-  document.getElementById('mdp-count-sup').textContent = sups.length;
-  document.getElementById('mdp-count-mem').textContent = mems.length;
-  document.getElementById('mdp-sub').textContent =
-    `${sups.length} supervisor${sups.length!==1?'es':''} · ${mems.length} voluntário${mems.length!==1?'s':''}`;
-
-  const stCores = {ativo:'#D1FAE5', pendente:'#FEF3C7', inativo:'#FEE2E2'};
-  const stText  = {ativo:'#065F46', pendente:'#78350F', inativo:'#991B1B'};
-
-  document.getElementById('mdp-supervisores').innerHTML = sups.length
-    ? sups.map(s=>`
-        <div class="min-pessoa-item">
-          <div class="min-pessoa-avatar" style="background:${s.avatar_cor||m.cor_hex}">${s.avatar_iniciais||s.nome[0]}</div>
-          <div><div class="min-pessoa-nome">${s.nome}</div><div class="min-pessoa-role">${s.email}</div></div>
-          <span class="min-pessoa-badge" style="background:${stCores[s.status]||'#E2E8F0'};color:${stText[s.status]||'#666'}">${s.status}</span>
-        </div>`).join('')
-    : '<div class="min-empty-pessoas">Nenhum supervisor vinculado</div>';
-
-  document.getElementById('mdp-membros').innerHTML = mems.length
-    ? mems.map(x=>`
-        <div class="min-pessoa-item">
-          <div class="min-pessoa-avatar" style="background:${x.avatar_cor||m.cor_hex}">${x.avatar_iniciais||x.nome[0]}</div>
-          <div><div class="min-pessoa-nome">${x.nome}</div><div class="min-pessoa-role">${x.funcao||'Voluntário'}</div></div>
-          <span class="min-pessoa-badge" style="background:${m.cor_hex}22;color:${m.cor_hex}">${x.funcao||'—'}</span>
-        </div>`).join('')
-    : '<div class="min-empty-pessoas">Nenhum voluntário vinculado</div>';
-
-  document.getElementById('min-detail-panel').classList.add('open');
-  document.body.classList.add('min-panel-open');
-  renderSidebarMinisterios();
-}
-
-function fecharPainelMinisterio() {
-  minPainelAtivo = null;
-  document.getElementById('min-detail-panel').classList.remove('open');
-  document.body.classList.remove('min-panel-open');
-  renderSidebarMinisterios();
-}
-
-function atualizarPainelSeAberto() {
-  if (minPainelAtivo) abrirPainelMinisterio(minPainelAtivo);
-  else renderSidebarMinisterios();
-}
-
-function abrirModalMinisterio() {
-  document.getElementById('modal-ministerio-titulo').textContent = 'Novo Ministério';
-  document.getElementById('min-id').value    = '';
-  document.getElementById('min-nome').value  = '';
-  document.getElementById('min-icone').value = '⛪';
-  document.getElementById('min-cor').value   = '#0D9488';
-  openModal('modal-ministerio');
-}
-
-function editarMinisterioAtual() {
-  if (!minPainelAtivo) return;
-  const m = DB.ministerios.find(x=>x.id===minPainelAtivo);
-  if (!m) return;
-  document.getElementById('modal-ministerio-titulo').textContent = 'Editar Ministério';
-  document.getElementById('min-id').value    = m.id;
-  document.getElementById('min-nome').value  = m.nome;
-  document.getElementById('min-icone').value = m.icone||'⛪';
-  document.getElementById('min-cor').value   = m.cor_hex;
-  openModal('modal-ministerio');
-  // Marca selecionados após renderizar
-  setTimeout(()=>{
-    document.querySelectorAll('.icone-opt').forEach(b=>{ b.style.borderColor=b.dataset.val===m.icone?'var(--teal)':'var(--border)'; b.style.background=b.dataset.val===m.icone?'var(--teal-light)':'#fff'; });
-    document.querySelectorAll('.cor-opt').forEach(b=>{ b.style.borderColor=b.dataset.val===m.cor_hex?'#1A1A2E':'transparent'; });
-  },30);
-}
-
-function preencherPaleta() {
-  const ic = document.getElementById('min-icone').value;
-  const co = document.getElementById('min-cor').value;
-  document.getElementById('min-icones').innerHTML = ICONES.map(i=>`
-    <button type="button" class="icone-opt" data-val="${i}" onclick="selecionarIcone('${i}')"
-            style="width:32px;height:32px;border-radius:7px;border:2px solid ${ic===i?'var(--teal)':'var(--border)'};
-                   background:${ic===i?'var(--teal-light)':'#fff'};font-size:17px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center">${i}</button>`).join('');
-  document.getElementById('min-cores').innerHTML = PALETA.map(c=>`
-    <button type="button" class="cor-opt" data-val="${c}" onclick="selecionarCor('${c}')"
-            style="width:26px;height:26px;border-radius:50%;background:${c};border:3px solid ${co===c?'#1A1A2E':'transparent'};cursor:pointer;transition:all .15s"></button>`).join('');
-}
-
-function selecionarIcone(ic) {
-  document.getElementById('min-icone').value = ic;
-  document.querySelectorAll('.icone-opt').forEach(b=>{ const s=b.dataset.val===ic; b.style.borderColor=s?'var(--teal)':'var(--border)'; b.style.background=s?'var(--teal-light)':'#fff'; });
-}
-function selecionarCor(c) {
-  document.getElementById('min-cor').value = c;
-  document.querySelectorAll('.cor-opt').forEach(b=>{ b.style.borderColor=b.dataset.val===c?'#1A1A2E':'transparent'; });
-}
-
-function salvarMinisterio() {
-  const nome  = document.getElementById('min-nome').value.trim();
-  const icone = document.getElementById('min-icone').value||'⛪';
-  const cor   = document.getElementById('min-cor').value||'#0D9488';
-  const id    = document.getElementById('min-id').value;
-  if (!nome) { showToast('Nome obrigatório','error'); return; }
-  if (id) {
-    const idx = DB.ministerios.findIndex(m=>m.id==id);
-    if (idx>=0) {
-      DB.ministerios[idx] = {...DB.ministerios[idx], nome, icone, cor_hex:cor};
-      // Propaga nome para supervisores e membros
-      DB.supervisores.filter(s=>s.ministerio_id==id).forEach(s=>s.ministerio=nome);
-      DB.membros.filter(x=>x.ministerio_id==id).forEach(x=>x.ministerio=nome);
-      showToast('Ministério atualizado!','success');
-      abrirPainelMinisterio(parseInt(id));
-    }
-  } else {
-    const novoId = DB.nextId.min++;
-    DB.ministerios.push({id:novoId, nome, icone, cor_hex:cor});
-    showToast('Ministério criado!','success');
-  }
-  closeModal('modal-ministerio');
-  renderSidebarMinisterios();
-  preencherSelectMinisterios();
-  renderLegenda();
-}
-
-function excluirMinisterio(id) {
-  const m = DB.ministerios.find(x=>x.id===id);
-  const nS = DB.supervisores.filter(s=>s.ministerio_id==id).length;
-  const nM = DB.membros.filter(x=>x.ministerio_id==id).length;
-  showConfirm('Excluir Ministério',
-    `Remover "${m?.nome}"?${nS||nM?` ${nS} supervisor(es) e ${nM} membro(s) serão desvinculados.`:''}`,
-    ()=>{
-      DB.ministerios = DB.ministerios.filter(x=>x.id!==id);
-      DB.supervisores.filter(s=>s.ministerio_id==id).forEach(s=>{ s.ministerio_id=null; s.ministerio=''; });
-      DB.membros.filter(x=>x.ministerio_id==id).forEach(x=>{ x.ministerio_id=null; x.ministerio=''; });
-      DB.escalas.filter(e=>e.ministerio_id==id).forEach(e=>{ e.ministerio_id=null; e.ministerio=''; });
-      if (minPainelAtivo===id) fecharPainelMinisterio();
-      showToast('Ministério removido','warning');
-      renderSidebarMinisterios();
-      preencherSelectMinisterios();
-      renderLegenda();
-      carregarSupervisores();
-      carregarMembros();
-    }
-  );
-}
-
-/* ================================================================
-   DASHBOARD
-   ================================================================ */
-function carregarDashboard() {
-  document.getElementById('kpi-supervisores').textContent = DB.supervisores.filter(s=>s.status==='ativo').length;
-  document.getElementById('kpi-membros').textContent      = DB.membros.length;
-
-  const hoje = new Date();
-  const ini  = new Date(hoje); ini.setDate(hoje.getDate()-hoje.getDay());
-  const fim  = new Date(ini);  fim.setDate(ini.getDate()+6);
-  document.getElementById('kpi-escalas').textContent = DB.escalas.filter(e=>{ const d=new Date(e.data_escala+'T00:00'); return d>=ini&&d<=fim; }).length;
-
-  document.getElementById('notif-badge').classList.remove('hidden');
-
-  const hoje_str = new Date().toISOString().slice(0,10);
-  const prox = DB.escalas.filter(e=>e.data_escala>=hoje_str).slice(0,4);
-  const el = document.getElementById('proximas-escalas');
-  el.innerHTML = prox.length
-    ? prox.map(e=>`
-        <div class="event-item" style="border-color:${minCor(e.ministerio_id)};background:${minBgCard(e.ministerio_id)}">
-          <div class="event-title">${minIcon(e.ministerio_id)} ${e.ministerio||'—'}</div>
-          <div class="event-sub">${e.membro_nome||'—'} · ${fmtData(e.data_escala)} ${fmtHora(e.horario)}</div>
-        </div>`).join('')
-    : '<p style="color:var(--muted);text-align:center;font-size:13px">Nenhuma escala futura</p>';
-}
-
-/* ================================================================
-   SUPERVISORES
-   ================================================================ */
-function setView(mode) {
-  supViewMode = mode;
-  document.getElementById('vbtn-cards').classList.toggle('active', mode==='cards');
-  document.getElementById('vbtn-lista').classList.toggle('active', mode==='lista');
-  document.getElementById('sup-grid-container').style.display  = mode==='cards'?'block':'none';
-  document.getElementById('sup-lista-container').style.display = mode==='lista'?'block':'none';
-  carregarSupervisores();
-}
-
-function toggleEquipe(supId) {
-  const list = document.getElementById(`equipe-${supId}`);
-  const btn  = document.getElementById(`toggle-${supId}`);
-  if (!list||!btn) return;
-  const open = list.classList.toggle('open');
-  btn.classList.toggle('open', open);
-}
-
-function carregarSupervisores() {
-  const busca  = document.getElementById('fil-sup-busca')?.value.toLowerCase()||'';
-  const minFil = document.getElementById('fil-sup-min')?.value||'';
-  const stFil  = document.getElementById('fil-sup-status')?.value||'';
-  const lista  = DB.supervisores.filter(s=>
-    (!busca || s.nome.toLowerCase().includes(busca)||s.email.toLowerCase().includes(busca)) &&
-    (!minFil || s.ministerio_id==minFil) &&
-    (!stFil  || s.status===stFil)
-  );
-
-  document.getElementById('stat-total-sup').textContent      = DB.supervisores.length;
-  document.getElementById('stat-ativos-sup').textContent     = DB.supervisores.filter(s=>s.status==='ativo').length;
-  document.getElementById('stat-pendentes-sup').textContent  = DB.supervisores.filter(s=>s.status==='pendente').length;
-  document.getElementById('stat-membros-sup').textContent    = DB.membros.length;
-  document.getElementById('stat-ministerios-sup').textContent= new Set(DB.supervisores.filter(s=>s.ministerio_id).map(s=>s.ministerio_id)).size;
-
-  supViewMode==='cards' ? renderSupCards(lista) : renderSupLista(lista);
-}
-
-function renderSupCards(lista) {
-  const c = document.getElementById('sup-grid-container');
-  if (!lista.length) { c.innerHTML=`<div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">Nenhum supervisor encontrado</div></div>`; return; }
-  c.innerHTML = `<div class="sup-grid">${lista.map(s=>{
-    const cor  = s.avatar_cor||minCor(s.ministerio_id);
-    const bg   = minBgCard(s.ministerio_id);
-    const icon = minIcon(s.ministerio_id);
-    const mObj = minById(s.ministerio_id);
-    const mems = DB.membros.filter(m=>m.ministerio_id==s.ministerio_id);
-    const nMem = mems.length;
-    const stColors = {ativo:'var(--green)',pendente:'var(--yellow)',inativo:'#94A3B8'};
-    const memRows = mems.length
-      ? mems.map(m=>`
-          <div class="sup-membro-row">
-            <div class="sup-membro-avatar" style="background:${m.avatar_cor||cor}">${m.avatar_iniciais||m.nome[0]}</div>
-            <div><div class="sup-membro-nome">${m.nome}</div><div class="sup-membro-funcao">${m.funcao||'—'}</div></div>
-            <span class="sup-membro-tag" style="background:${bg};color:${cor}">${m.funcao||'—'}</span>
-          </div>`).join('')
-      : `<div class="sup-empty">Nenhum membro nesta equipe</div>`;
-    return `
-    <div class="sup-card">
-      <div class="sup-card-header" style="--sup-color:${cor}">
-        <div class="sup-avatar-lg" style="--sup-color:${cor}">${s.avatar_iniciais||s.nome[0]}</div>
-        <div class="sup-info">
-          <div class="sup-name">${s.nome}</div>
-          <div class="sup-meta">✉ ${s.email}</div>
-          ${s.telefone?`<div class="sup-meta">📞 ${s.telefone}</div>`:''}
-        </div>
-        <span style="font-size:11px;font-weight:700;color:${stColors[s.status]||'#888'};background:${bg};padding:3px 8px;border-radius:10px">${s.status}</span>
-      </div>
-      <div class="sup-ministerio" style="--sup-color:${cor};--sup-bg:${bg}">
-        <div class="sup-ministerio-nome"><span>${icon}</span><span>${mObj?.nome||'Sem ministério'}</span></div>
-        <span class="sup-ministerio-count" style="background:${cor}">${nMem} membro${nMem!==1?'s':''}</span>
-      </div>
-      <button class="sup-toggle" id="toggle-${s.id}" onclick="toggleEquipe(${s.id})">
-        <span>👥 Ver equipe (${nMem})</span><span class="sup-toggle-chevron">▾</span>
-      </button>
-      <div class="sup-membros-list" id="equipe-${s.id}">
-        ${memRows}
-        <div style="display:flex;gap:7px;padding:9px 14px 12px">
-          <button class="btn btn-primary" style="font-size:11px;padding:6px 12px" onclick="editarSupervisor(${s.id})">✏️ Editar</button>
-          <button class="btn btn-outline" style="font-size:11px;padding:6px 12px" onclick="excluirSupervisor(${s.id})">🗑 Remover</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-function renderSupLista(lista) {
-  const tbody = document.getElementById('tbody-supervisores');
-  if (!lista.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Nenhum supervisor</td></tr>`; return; }
-  tbody.innerHTML = lista.map(s=>{
-    const nMem = DB.membros.filter(m=>m.ministerio_id==s.ministerio_id).length;
-    const mObj = minById(s.ministerio_id);
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:9px">
-        <div style="width:34px;height:34px;border-radius:50%;background:${s.avatar_cor||'#0D9488'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px">${s.avatar_iniciais||s.nome[0]}</div>
-        <div><strong>${s.nome}</strong><br><span style="color:var(--muted);font-size:11px">${s.email}</span></div>
-      </div></td>
-      <td style="font-weight:600;font-size:12px;color:${minCor(s.ministerio_id)}">${minIcon(s.ministerio_id)} ${mObj?.nome||'—'}</td>
-      <td style="font-weight:700">${nMem}</td>
-      <td style="color:var(--muted);font-size:12px">${s.telefone||'—'}</td>
-      <td>${badgeStatus(s.status)}</td>
-      <td>
-        <button class="action-btn" onclick="editarSupervisor(${s.id})">✏️</button>
-        <button class="action-btn" onclick="setView('cards');setTimeout(()=>toggleEquipe(${s.id}),200)">👥</button>
-        <button class="action-btn" onclick="excluirSupervisor(${s.id})">🗑</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function editarSupervisor(id) {
-  const s = DB.supervisores.find(x=>x.id===id);
-  if (!s) return;
-  document.getElementById('modal-supervisor-titulo').textContent = 'Editar Supervisor';
-  document.getElementById('sup-id').value       = s.id;
-  document.getElementById('sup-nome').value     = s.nome;
-  document.getElementById('sup-email').value    = s.email;
-  document.getElementById('sup-telefone').value = s.telefone||'';
-  document.getElementById('sup-status').value   = s.status;
-  openModal('modal-supervisor');
-  setTimeout(()=>{ document.getElementById('sup-ministerio').value = s.ministerio_id||''; }, 50);
-}
-
-function salvarSupervisor() {
-  const nome  = document.getElementById('sup-nome').value.trim();
-  const email = document.getElementById('sup-email').value.trim();
-  const tel   = document.getElementById('sup-telefone').value.trim();
-  const minId = document.getElementById('sup-ministerio').value;
-  const status= document.getElementById('sup-status').value;
-  const id    = document.getElementById('sup-id').value;
-  if (!nome||!email) { showToast('Nome e e-mail obrigatórios','error'); return; }
-  const mObj    = minById(minId);
-  const iniciais= nome.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
-  const cores   = PALETA;
-  if (id) {
-    const idx = DB.supervisores.findIndex(s=>s.id==id);
-    if (idx>=0) DB.supervisores[idx]={...DB.supervisores[idx], nome, email, telefone:tel, ministerio_id:minId?parseInt(minId):null, status, avatar_iniciais:iniciais};
-    showToast('Supervisor atualizado!','success');
-  } else {
-    DB.supervisores.push({id:DB.nextId.sup++, nome, email, telefone:tel, ministerio_id:minId?parseInt(minId):null, status, avatar_iniciais:iniciais, avatar_cor:cores[DB.supervisores.length%cores.length]});
-    showToast('Supervisor cadastrado!','success');
-  }
-  closeModal('modal-supervisor');
-  document.getElementById('sup-id').value='';
-  document.getElementById('modal-supervisor-titulo').textContent='Novo Supervisor';
-  ['sup-nome','sup-email','sup-telefone'].forEach(f=>document.getElementById(f).value='');
-  carregarSupervisores(); carregarDashboard(); atualizarPainelSeAberto();
-}
-
-function excluirSupervisor(id) {
-  const s = DB.supervisores.find(x=>x.id===id);
-  showConfirm('Excluir Supervisor',`Remover "${s?.nome}"? Membros vinculados ficarão sem supervisor.`,()=>{
-    DB.supervisores = DB.supervisores.filter(x=>x.id!==id);
-    DB.membros.filter(m=>m.supervisor_id===id).forEach(m=>m.supervisor_id=null);
-    showToast('Supervisor removido','warning');
-    carregarSupervisores(); carregarDashboard(); atualizarPainelSeAberto();
-  });
-}
-
-/* ================================================================
-   MEMBROS
-   ================================================================ */
-function carregarMembros() {
-  const busca  = document.getElementById('fil-mem-busca')?.value.toLowerCase()||'';
-  const minFil = document.getElementById('fil-mem-min')?.value||'';
-  const lista  = DB.membros.filter(m=>
-    (!busca || m.nome.toLowerCase().includes(busca)) &&
-    (!minFil || m.ministerio_id==minFil)
-  );
-  const grid = document.getElementById('grid-membros');
-  if (!lista.length) { grid.innerHTML=`<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Nenhum membro encontrado</div></div></div>`; return; }
-  grid.innerHTML = lista.map(m=>{
-    const mObj = minById(m.ministerio_id);
-    const cor  = m.avatar_cor||minCor(m.ministerio_id);
-    const tagMin  = mObj ? `<span class="tag" style="background:${mObj.cor_hex}22;color:${mObj.cor_hex}">${mObj.icone||''} ${mObj.nome}</span>` : '';
-    const tagHab  = (m.habilidades||[]).map(h=>`<span class="tag" style="background:#FCE7F3;color:#9D174D">${h}</span>`).join('');
-    const tagDisp = (m.disponibilidades||[]).map(d=>`<span class="tag" style="background:var(--green-light);color:#065F46">${d}</span>`).join('');
-    return `
-    <div class="member-card">
-      <div class="member-header">
-        <div class="member-avatar" style="background:${cor}">${m.avatar_iniciais||m.nome[0]}</div>
-        <div><div class="member-name">${m.nome}</div><div class="member-role">${m.funcao||'Membro'}</div></div>
-        <button class="member-more" onclick="editarMembro(${m.id})">···</button>
-      </div>
-      <div class="member-tags">${tagMin}${tagHab}${tagDisp}</div>
-    </div>`;
-  }).join('');
-}
-
-function editarMembro(id) {
-  const m = DB.membros.find(x=>x.id===id);
-  if (!m) return;
-  document.getElementById('modal-membro-titulo').textContent = 'Editar Membro';
-  document.getElementById('mem-id').value      = m.id;
-  document.getElementById('mem-nome').value    = m.nome;
-  document.getElementById('mem-email').value   = m.email||'';
-  document.getElementById('mem-telefone').value= m.telefone||'';
-  document.getElementById('mem-funcao').value  = m.funcao||'';
-  openModal('modal-membro');
-  setTimeout(()=>{
-    document.getElementById('mem-ministerio').value = m.ministerio_id||'';
-    atualizarSelectSupervisores();
-    setTimeout(()=>{ document.getElementById('mem-supervisor').value = m.supervisor_id||''; },30);
-  },50);
-}
-
-function salvarMembro() {
-  const nome   = document.getElementById('mem-nome').value.trim();
-  const email  = document.getElementById('mem-email').value.trim();
-  const tel    = document.getElementById('mem-telefone').value.trim();
-  const minId  = document.getElementById('mem-ministerio').value;
-  const supId  = document.getElementById('mem-supervisor').value;
-  const funcao = document.getElementById('mem-funcao').value.trim();
-  const id     = document.getElementById('mem-id').value;
-  if (!nome) { showToast('Nome obrigatório','error'); return; }
-  const mObj = minById(minId);
-  const cor  = PALETA[DB.membros.length % PALETA.length];
-  if (id) {
-    const idx = DB.membros.findIndex(m=>m.id==id);
-    if (idx>=0) DB.membros[idx]={...DB.membros[idx], nome, email, telefone:tel, ministerio_id:minId?parseInt(minId):null, supervisor_id:supId?parseInt(supId):null, funcao, avatar_iniciais:nome[0].toUpperCase()};
-    showToast('Membro atualizado!','success');
-  } else {
-    DB.membros.push({id:DB.nextId.mem++, nome, email, telefone:tel, ministerio_id:minId?parseInt(minId):null, supervisor_id:supId?parseInt(supId):null, funcao, habilidades:[], disponibilidades:[], avatar_iniciais:nome[0].toUpperCase(), avatar_cor:cor});
-    showToast('Membro cadastrado!','success');
-  }
-  closeModal('modal-membro');
-  document.getElementById('mem-id').value='';
-  document.getElementById('modal-membro-titulo').textContent='Novo Membro';
-  ['mem-nome','mem-email','mem-telefone','mem-funcao'].forEach(f=>document.getElementById(f).value='');
-  carregarMembros(); carregarDashboard(); atualizarPainelSeAberto();
-}
-
-/* ================================================================
-   ESCALAS
-   ================================================================ */
-function carregarEscalas(pagina=1) {
-  escalasPage = pagina;
-  const POR_PAG = 8;
-  const inicio  = (pagina-1)*POR_PAG;
-  const lista   = DB.escalas.slice(inicio, inicio+POR_PAG);
-  const totalPags = Math.ceil(DB.escalas.length/POR_PAG);
-
-  const tbody = document.getElementById('tbody-escalas');
-  tbody.innerHTML = lista.length
-    ? lista.map(e=>{
-        const waBtnStyle = e.wa_status === 'confirmado' ? 'color:#16A34A' :
-                           e.wa_status === 'enviado'    ? 'color:#F97316' :
-                           e.wa_status === 'recusado'   ? 'color:#EF4444' : 'color:var(--muted)';
-        const waTitle    = e.wa_status === 'confirmado' ? 'Confirmado ✅' :
-                           e.wa_status === 'enviado'    ? 'Aguardando resposta ⏳' :
-                           e.wa_status === 'recusado'   ? 'Recusado ❌' : 'Enviar confirmação';
-        return `
-        <tr>
-          <td><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:${minCor(e.ministerio_id)}">${minIcon(e.ministerio_id)} ${e.ministerio||'—'}</span></td>
-          <td style="color:var(--muted)">${fmtData(e.data_escala)}</td>
-          <td style="color:var(--muted)">${fmtHora(e.horario)}</td>
-          <td><strong>${e.membro_nome||'—'}</strong></td>
-          <td style="color:var(--muted)">${e.funcao||'—'}</td>
-          <td>${badgeStatus(e.status)}</td>
-          <td>
-            <button class="action-btn" title="${waTitle}" style="${waBtnStyle}"
-                    onclick="enviarWhatsApp(${e.id},'${e.membro_nome||''}')">
-              📲
-            </button>
-          </td>
-          <td>
-            <button class="action-btn" onclick="editarEscala(${e.id})">✏️</button>
-            <button class="action-btn" onclick="excluirEscala(${e.id})">🗑</button>
-          </td>
-        </tr>`;}
-      ).join('')
-    : `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma escala cadastrada</td></tr>`;
-
-  const pag = document.getElementById('pagination-escalas');
-  pag.innerHTML = `
-    <span>Pág. ${pagina}/${totalPags||1}</span>
-    <button class="page-btn" ${pagina<=1?'disabled':''} onclick="carregarEscalas(1)">«</button>
-    <button class="page-btn" ${pagina<=1?'disabled':''} onclick="carregarEscalas(${pagina-1})">‹</button>
-    <button class="page-btn" ${pagina>=totalPags?'disabled':''} onclick="carregarEscalas(${pagina+1})">›</button>
-    <button class="page-btn" ${pagina>=totalPags?'disabled':''} onclick="carregarEscalas(${totalPags})">»</button>`;
-}
-
-function editarEscala(id) {
-  const e = DB.escalas.find(x=>x.id===id);
-  if (!e) return;
-  document.getElementById('modal-escala-titulo').textContent = 'Editar Escala';
-  document.getElementById('esc-id').value      = e.id;
-  document.getElementById('esc-data').value    = e.data_escala;
-  document.getElementById('esc-horario').value = e.horario;
-  document.getElementById('esc-funcao').value  = e.funcao||'';
-  document.getElementById('esc-status').value  = e.status;
-  document.getElementById('esc-obs').value     = e.observacoes||'';
-  openModal('modal-escala');
-  setTimeout(()=>{
-    document.getElementById('esc-ministerio').value = e.ministerio_id||'';
-    atualizarSelectMembrosPorMin();
-    setTimeout(()=>{ document.getElementById('esc-membro').value = e.membro_id||''; },30);
-  },50);
-}
-
-function salvarEscala() {
-  const data   = document.getElementById('esc-data').value;
-  const hora   = document.getElementById('esc-horario').value;
-  const minId  = document.getElementById('esc-ministerio').value;
-  const funcao = document.getElementById('esc-funcao').value.trim();
-  const status = document.getElementById('esc-status').value;
-  const obs    = document.getElementById('esc-obs').value.trim();
-  const memId  = document.getElementById('esc-membro').value;
-  const id     = document.getElementById('esc-id').value;
-  if (!data||!hora) { showToast('Data e horário obrigatórios','error'); return; }
-  const mObj   = minById(minId);
-  const memObj = DB.membros.find(m=>m.id==memId);
-  if (id) {
-    const idx = DB.escalas.findIndex(e=>e.id==id);
-    if (idx>=0) DB.escalas[idx]={...DB.escalas[idx], ministerio_id:minId?parseInt(minId):null, ministerio:mObj?.nome||'', membro_id:memId?parseInt(memId):null, membro_nome:memObj?.nome||'', funcao, status, observacoes:obs, data_escala:data, horario:hora};
-    showToast('Escala atualizada!','success');
-  } else {
-    DB.escalas.push({id:DB.nextId.esc++, ministerio_id:minId?parseInt(minId):null, ministerio:mObj?.nome||'', membro_id:memId?parseInt(memId):null, membro_nome:memObj?.nome||'', funcao, status, observacoes:obs, data_escala:data, horario:hora});
-    showToast('Escala criada!','success');
-  }
-  closeModal('modal-escala');
-  document.getElementById('esc-id').value='';
-  document.getElementById('modal-escala-titulo').textContent='Nova Escala';
-  ['esc-data','esc-horario','esc-funcao','esc-obs'].forEach(f=>document.getElementById(f).value='');
-  carregarEscalas(escalasPage); carregarDashboard();
-}
-
-function excluirEscala(id) {
-  showConfirm('Excluir Escala','Remover esta escala?',()=>{
-    DB.escalas = DB.escalas.filter(e=>e.id!==id);
-    showToast('Escala removida','warning');
-    carregarEscalas(escalasPage);
-  });
-}
-
-/* ================================================================
-   WHATSAPP — Envio via N8N
-   ================================================================ */
-async function enviarWhatsApp(escalaId, membroNome) {
-  const e = DB.escalas.find(x=>x.id===escalaId);
-  if (!e) return;
-
-  // Verifica se membro tem telefone cadastrado
-  const mem = DB.membros.find(m=>m.id===e.membro_id);
-  if (!mem?.telefone) {
-    showToast(`${membroNome} não tem telefone cadastrado`, 'error');
-    return;
-  }
-
-  showConfirm(
-    'Enviar confirmação via WhatsApp',
-    `Enviar mensagem de confirmação para ${membroNome} (${mem.telefone})?`,
-    async () => {
-      showToast('Enviando…', 'info');
-      try {
-        const resp = await fetch(N8N_ENVIAR_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ escala_id: escalaId }),
-        });
-        const data = await resp.json();
-        if (data.sucesso || data.status === 'enviado') {
-          // Marca localmente como enviado para feedback visual imediato
-          const idx = DB.escalas.findIndex(x=>x.id===escalaId);
-          if (idx>=0) DB.escalas[idx].wa_status = 'enviado';
-          showToast(`✅ Mensagem enviada para ${membroNome}!`, 'success');
-          carregarEscalas(escalasPage);
-        } else {
-          showToast(`Falha no envio: ${data.erro || 'verifique o N8N'}`, 'error');
-        }
-      } catch (err) {
-        showToast('Erro de conexão com o N8N. Verifique a URL configurada.', 'error');
-        console.error('Erro N8N:', err);
-      }
-    }
-  );
-}
-
-function exportarEscalas() {
-  const h = ['Ministério','Data','Horário','Membro','Função','Status'];
-  const r = DB.escalas.map(e=>[e.ministerio||'—',fmtData(e.data_escala),fmtHora(e.horario),e.membro_nome||'—',e.funcao||'—',e.status]);
-  const csv = [h,...r].map(row=>row.map(c=>`"${c}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='escalas.csv'; a.click();
-  showToast('Exportado!','success');
-}
-
-/* ================================================================
-   CALENDÁRIO
-   ================================================================ */
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const DIAS  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-
-function navCal(dir) {
-  calState.mes += dir;
-  if (calState.mes>11) { calState.mes=0; calState.ano++; }
-  if (calState.mes<0)  { calState.mes=11; calState.ano--; }
-  renderCalendario('cal-full',false);
-  renderCalendario('cal-dash',true);
-  carregarProximosEventos();
-}
-
-// Retorna a cor principal de um evento (primeiro ministério)
-function evtCor(evt) {
-  if (!evt.ministerios_ids || !evt.ministerios_ids.length) return '#64748B';
-  return minCor(evt.ministerios_ids[0]);
-}
-
-function renderCalendario(containerId, mini) {
-  const {mes, ano} = calState;
-  const titulo = document.getElementById('cal-mes-titulo');
-  if (titulo) titulo.textContent = `${MESES[mes]} ${ano}`;
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const primeiro = new Date(ano,mes,1).getDay();
-  const dias     = new Date(ano,mes+1,0).getDate();
-  const hoje     = new Date();
-  const evts     = DB.eventos.filter(e=>{ const d=new Date(e.data_evento+'T00:00'); return d.getMonth()===mes&&d.getFullYear()===ano; });
-
-  let html = `<table class="cal-table"><thead><tr>`;
-  DIAS.forEach(d=>{ html+=`<th>${mini?d[0]:d}</th>`; });
-  html += `</tr></thead><tbody>`;
-
-  let dia=1, cel=0;
-  while (dia<=dias) {
-    html += '<tr>';
-    for (let col=0;col<7;col++) {
-      if ((cel<primeiro&&dia===1)||dia>dias) { html+='<td></td>'; }
-      else {
-        const isHoje = dia===hoje.getDate()&&mes===hoje.getMonth()&&ano===hoje.getFullYear();
-        const evtsDia = evts.filter(e=>new Date(e.data_evento+'T00:00').getDate()===dia);
-        html += `<td class="${isHoje?'today':''}" onclick="diaClick(${dia},${mes},${ano})">`;
-        html += `<div class="cal-day-num">${dia}</div><div class="cal-cell-inner">`;
-        const MAX = mini?1:2;
-        evtsDia.slice(0,MAX).forEach(e=>{
-          const c=evtCor(e);
-          html+=`<span class="cal-event" style="background:${c}33;color:${c}" title="${e.titulo}">${e.titulo}</span>`;
-        });
-        if (evtsDia.length>MAX) html+=`<span class="cal-more">+${evtsDia.length-MAX}</span>`;
-        html += `</div></td>`;
-        dia++;
-      }
-      cel++;
-    }
-    html += '</tr>';
-  }
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function diaClick(dia, mes, ano) {
-  const d = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-  document.getElementById('evt-data').value = d;
-  document.getElementById('modal-evento-titulo').textContent = 'Novo Evento';
-  document.getElementById('evt-id').value = '';
-  openModal('modal-evento');
-}
-
-function carregarProximosEventos() {
-  const agora = new Date().toISOString().slice(0,10);
-  const prox  = DB.eventos.filter(e=>e.data_evento>=agora).slice(0,5);
-  const el = document.getElementById('cal-proximos-eventos');
-  if (!el) return;
-  el.innerHTML = prox.length
-    ? prox.map(e=>{
-        const c = evtCor(e);
-        const mins = (e.ministerios_ids||[]).map(id=>minById(id)?.nome||'').filter(Boolean).join(', ');
-        return `
-        <div class="event-item" style="border-color:${c};background:${c}18">
-          <div class="event-title">${e.titulo}</div>
-          <div class="event-sub">${fmtData(e.data_evento)} · ${mins||'—'}</div>
-        </div>`;
-      }).join('')
-    : '<p style="color:var(--muted);font-size:12px">Nenhum evento próximo</p>';
-}
-
-function renderLegenda() {
-  const el = document.getElementById('cal-legenda');
-  if (!el) return;
-  el.innerHTML = DB.ministerios.map(m=>`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${m.cor_hex}"></div>
-      ${m.icone||''} ${m.nome}
-    </div>`).join('');
-}
-
-function salvarEvento() {
-  const titulo = document.getElementById('evt-titulo').value.trim();
-  const data   = document.getElementById('evt-data').value;
-  const hora   = document.getElementById('evt-horario').value;
-  const tipo   = document.getElementById('evt-tipo').value;
-  const id     = document.getElementById('evt-id').value;
-  if (!titulo||!data||!hora) { showToast('Título, data e horário obrigatórios','error'); return; }
-  const checks = document.querySelectorAll('#evt-ministerios-checks input[name="evt-min"]:checked');
-  const mins   = Array.from(checks).map(c=>parseInt(c.value));
-  if (id) {
-    const idx = DB.eventos.findIndex(e=>e.id==id);
-    if (idx>=0) DB.eventos[idx]={...DB.eventos[idx], titulo, data_evento:data, horario:hora, tipo, ministerios_ids:mins};
-    showToast('Evento atualizado!','success');
-  } else {
-    DB.eventos.push({id:DB.nextId.evt++, titulo, data_evento:data, horario:hora, tipo, ministerios_ids:mins});
-    showToast(`Evento criado${mins.length?` para ${mins.length} ministério(s)`:''}!`,'success');
-  }
-  closeModal('modal-evento');
-  document.getElementById('evt-id').value='';
-  ['evt-titulo','evt-data','evt-horario'].forEach(f=>document.getElementById(f).value='');
-  renderCalendario('cal-full',false); renderCalendario('cal-dash',true); carregarProximosEventos();
-}
-
-/* ================================================================
-   RELATÓRIOS — todas as abas com dados consistentes do DB
-   ================================================================ */
-function carregarRelatorios() { mudarAba(abaAtiva); }
-
-function mudarAba(aba) {
-  abaAtiva = aba;
-  document.querySelectorAll('.rel-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.rel-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+aba).classList.add('active');
-  document.getElementById('panel-'+aba).classList.add('active');
-  ({geral:renderRelGeral, presenca:renderRelPresenca, equipes:renderRelEquipes, membros:renderRelMembros})[aba]?.();
-}
-
-function renderRelGeral() {
-  const total = DB.escalas.length;
-  const conf  = DB.escalas.filter(e=>e.status==='confirmado').length;
-  const taxaG = pct(conf, total);
-
-  document.getElementById('rel-voluntarios').textContent  = DB.membros.length;
-  document.getElementById('rel-escalas-total').textContent = total;
-  document.getElementById('rel-taxa-geral').textContent   = `${taxaG}%`;
-
-  // Gráfico barras — usa ministerio_id para agrupar corretamente
-  const chartEl = document.getElementById('chart-equipes');
-  const labelEl = document.getElementById('chart-labels');
-  const dados   = DB.ministerios.map(m=>{
-    const escs = DB.escalas.filter(e=>e.ministerio_id==m.id);
-    return { nome:m.nome, cor:m.cor_hex, conf:escs.filter(e=>e.status==='confirmado').length, pend:escs.filter(e=>e.status==='pendente').length, aus:escs.filter(e=>e.status==='ausente').length };
-  });
-  const max = Math.max(...dados.map(d=>d.conf+d.pend+d.aus), 1);
-  chartEl.innerHTML = dados.map(d=>`
-    <div class="bar-group">
-      <div class="bar" style="height:${Math.round((d.conf/max)*100)||4}%;background:#0D9488"></div>
-      <div class="bar" style="height:${Math.round((d.aus/max)*100)||4}%;background:#EF4444"></div>
-      <div class="bar" style="height:${Math.round((d.pend/max)*100)||4}%;background:#EAB308"></div>
-    </div>`).join('');
-  labelEl.innerHTML = dados.map(d=>`<span class="bar-label">${d.nome}</span>`).join('');
-
-  // Gráfico linha SVG — escalas por mês (do ano atual)
-  const porMes = Array(12).fill(0);
-  DB.escalas.forEach(e=>{ const d=new Date(e.data_escala+'T00:00'); if(d.getFullYear()===new Date().getFullYear()) porMes[d.getMonth()]++; });
-  const maxM = Math.max(...porMes, 1);
-  const pts  = porMes.map((v,i)=>{ const x=i*(300/11); const y=110-Math.round((v/maxM)*95); return `${x},${y}`; });
-  document.getElementById('chart-freq').innerHTML=`
-    <defs><linearGradient id="aG" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0D9488" stop-opacity=".3"/>
-      <stop offset="100%" stop-color="#0D9488" stop-opacity="0"/>
-    </linearGradient></defs>
-    <path d="M${pts[0]} L${pts.join(' L')} L${pts[11].split(',')[0]},120 L0,120 Z" fill="url(#aG)"/>
-    <path d="M${pts.join(' L')}" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    ${porMes.map((v,i)=>{ const [x,y]=pts[i].split(','); return `<circle cx="${x}" cy="${y}" r="3.5" fill="#0D9488"/>`; }).join('')}`;
-}
-
-function renderRelPresenca() {
-  const total = DB.escalas.length;
-  const conf  = DB.escalas.filter(e=>e.status==='confirmado').length;
-  const pend  = DB.escalas.filter(e=>e.status==='pendente').length;
-  const aus   = DB.escalas.filter(e=>e.status==='ausente').length;
-  document.getElementById('pc-total').textContent       = total;
-  document.getElementById('pc-confirmados').textContent = conf;
-  document.getElementById('pc-pendentes').textContent   = pend;
-  document.getElementById('pc-ausentes').textContent    = aus;
-  document.getElementById('pc-conf-pct').textContent    = `${pct(conf,total)}% de presença`;
-  document.getElementById('pc-pend-pct').textContent    = `${pct(pend,total)}% pendente`;
-  document.getElementById('pc-aus-pct').textContent     = `${pct(aus,total)}% de falta`;
-
-  document.getElementById('tbody-presenca').innerHTML = DB.ministerios.map(m=>{
-    // Usa ministerio_id (int) — consistente com o seed
-    const escs = DB.escalas.filter(e=>e.ministerio_id==m.id);
-    const tot  = escs.length;
-    const c    = escs.filter(e=>e.status==='confirmado').length;
-    const p    = escs.filter(e=>e.status==='pendente').length;
-    const a    = escs.filter(e=>e.status==='ausente').length;
-    const t    = pct(c, tot);
-    const cor  = corTaxa(t);
-    return `<tr>
-      <td><span style="display:inline-flex;align-items:center;gap:6px;font-weight:700">
-        <span style="width:9px;height:9px;border-radius:2px;background:${m.cor_hex};display:inline-block"></span>${m.icone||''} ${m.nome}
-      </span></td>
-      <td style="font-weight:700">${tot||'—'}</td>
-      <td style="color:var(--green);font-weight:700">${c||'—'}</td>
-      <td style="color:var(--yellow);font-weight:700">${p||'—'}</td>
-      <td style="color:#EF4444;font-weight:700">${a||'—'}</td>
-      <td><div class="mini-bar-wrap">
-        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${t}%;background:${cor}"></div></div>
-        <span style="font-size:11px;font-weight:700;color:${cor};min-width:34px">${tot?t+'%':'—'}</span>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderRelEquipes() {
-  document.getElementById('tbody-equipes-rel').innerHTML = DB.ministerios.map(m=>{
-    const sups = DB.supervisores.filter(s=>s.ministerio_id==m.id).length;
-    const mems = DB.membros.filter(x=>x.ministerio_id==m.id).length;
-    const escs = DB.escalas.filter(e=>e.ministerio_id==m.id).length;
-    const conf = DB.escalas.filter(e=>e.ministerio_id==m.id&&e.status==='confirmado').length;
-    const t    = pct(conf, escs);
-    const cor  = corTaxa(t);
-    return `<tr>
-      <td><span style="display:inline-flex;align-items:center;gap:7px;font-weight:700">
-        <span style="width:10px;height:10px;border-radius:2px;background:${m.cor_hex};display:inline-block"></span>${m.icone||''} ${m.nome}
-      </span></td>
-      <td style="font-weight:700">${sups}</td>
-      <td style="font-weight:700">${mems}</td>
-      <td style="font-weight:700">${escs}</td>
-      <td><div class="mini-bar-wrap">
-        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${t}%;background:${cor}"></div></div>
-        <span style="font-size:11px;font-weight:700;color:${cor};min-width:34px">${escs?t+'%':'—'}</span>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderRelMembros() {
-  const busca = document.getElementById('fil-rel-membro')?.value.toLowerCase()||'';
-  const lista = DB.membros.filter(m=>!busca||m.nome.toLowerCase().includes(busca));
-  const tbody = document.getElementById('tbody-membros-rel');
-  tbody.innerHTML = lista.length
-    ? lista.map(m=>{
-        // Filtra por membro_id (int) — campo correto no seed
-        const escs = DB.escalas.filter(e=>e.membro_id===m.id);
-        const tot  = escs.length;
-        const conf = escs.filter(e=>e.status==='confirmado').length;
-        const aus  = escs.filter(e=>e.status==='ausente').length;
-        const t    = pct(conf, tot);
-        const cor  = tot ? corTaxa(t) : '#94A3B8';
-        const mObj = minById(m.ministerio_id);
-        return `<tr>
-          <td><div style="display:flex;align-items:center;gap:8px">
-            <div style="width:30px;height:30px;border-radius:50%;background:${m.avatar_cor||'#0D9488'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px">${m.avatar_iniciais||m.nome[0]}</div>
-            <div><div style="font-weight:700;font-size:12px">${m.nome}</div><div style="font-size:10px;color:var(--muted)">${m.funcao||'—'}</div></div>
-          </div></td>
-          <td style="font-size:11px;color:var(--muted)">${mObj?`${mObj.icone||''} ${mObj.nome}`:'—'}</td>
-          <td style="font-weight:700">${tot||'—'}</td>
-          <td style="color:var(--green);font-weight:700">${conf||'—'}</td>
-          <td style="color:#EF4444;font-weight:700">${aus||'—'}</td>
-          <td>${tot?`<div class="mini-bar-wrap">
-            <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${t}%;background:${cor}"></div></div>
-            <span style="font-size:11px;font-weight:700;color:${cor};min-width:34px">${t}%</span>
-          </div>`:'<span style="color:var(--muted);font-size:11px">Sem escalas</span>'}</td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Nenhum membro encontrado</td></tr>`;
-}
-
-function exportarRelatorio() {
-  let header, rows, filename;
-  if (abaAtiva==='presenca'||abaAtiva==='geral') {
-    header = ['Ministério','Total','Confirmados','Pendentes','Ausentes','Taxa%'];
-    rows   = DB.ministerios.map(m=>{
-      const escs=DB.escalas.filter(e=>e.ministerio_id==m.id);
-      const tot=escs.length, c=escs.filter(e=>e.status==='confirmado').length;
-      const p=escs.filter(e=>e.status==='pendente').length, a=escs.filter(e=>e.status==='ausente').length;
-      return [m.nome,tot,c,p,a,tot?pct(c,tot)+'%':'0%'];
-    });
-    filename='relatorio_presenca.csv';
-  } else if (abaAtiva==='membros') {
-    header = ['Membro','Ministério','Função','Total','Confirmados','Faltas','Taxa%'];
-    rows   = DB.membros.map(m=>{
-      const escs=DB.escalas.filter(e=>e.membro_id===m.id);
-      const tot=escs.length, c=escs.filter(e=>e.status==='confirmado').length, a=escs.filter(e=>e.status==='ausente').length;
-      const mObj=minById(m.ministerio_id);
-      return [m.nome,mObj?.nome||'—',m.funcao||'—',tot,c,a,tot?pct(c,tot)+'%':'—'];
-    });
-    filename='relatorio_membros.csv';
-  } else {
-    header = ['Ministério','Supervisores','Membros','Escalas','Taxa%'];
-    rows   = DB.ministerios.map(m=>{
-      const escs=DB.escalas.filter(e=>e.ministerio_id==m.id).length;
-      const conf=DB.escalas.filter(e=>e.ministerio_id==m.id&&e.status==='confirmado').length;
-      return [m.nome,DB.supervisores.filter(s=>s.ministerio_id==m.id).length,DB.membros.filter(x=>x.ministerio_id==m.id).length,escs,escs?pct(conf,escs)+'%':'0%'];
-    });
-    filename='relatorio_equipes.csv';
-  }
-  const csv=[header,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'})); a.download=filename; a.click();
-  showToast('Relatório exportado!','success');
-}
-
-/* ================================================================
-   NOTIFICAÇÕES
-   ================================================================ */
-function toggleNotificacoes() {
-  showToast('3 notificações: escalas aguardando confirmação.','info');
-  document.getElementById('notif-badge').classList.add('hidden');
-}
-
-/* ================================================================
-   INICIALIZAÇÃO
-   ================================================================ */
-(function init() {
-  preencherSelectMinisterios();
-  renderSidebarMinisterios();
-  renderLegenda();
-  carregarDashboard();
-  renderCalendario('cal-dash', true);
-})();
-</script>
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
 </body>
 </html>
